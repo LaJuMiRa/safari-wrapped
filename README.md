@@ -6,12 +6,12 @@ Websites, Verweildauer und – ab Phase 2 – deine häufigsten Themen & Suchanf
 
 Alle Daten bleiben auf deinem Gerät (IndexedDB). Kein Server, kein Account, kein Sync.
 
-> **Status: Phase 2.** Getrackt werden Domains, Besuche und Verweildauer; dazu
-> Suchbegriffe (als Einzel-Keywords) aus Google/Bing/DuckDuckGo & Co. Das Popup
-> bietet einen Zeitraum-Umschalter (Heute/Woche/Monat), Top-Websites, eine
-> Kategorie-Verteilung, eine Themen-/Suchbegriff-Wolke und Einstellungen
-> (Ausschlussliste, Aufbewahrungsdauer). Die animierte Wrapped-Ansicht folgt in
-> Phase 3. Das vollständige Konzept steht in `Konzept_Browsing_Wrapped.md`.
+> **Status: Phase 3.** Zusätzlich zum Tracking (Domains, Besuche, Verweildauer,
+> Suchbegriffe) gibt es jetzt die **animierte Wrapped-Story**: ein Button im Popup
+> öffnet eine Vollbild-Seite (neuer Tab) mit durchklickbaren Folien für
+> Woche/Monat/Jahr — Gesamtzeit, Top-5, Lieblingsseite, Browsing-Typ, Themen,
+> Trends ggü. der Vorperiode, Kategorien — plus „Als Bild speichern" (lokal
+> erzeugtes PNG). Das vollständige Konzept steht in `Konzept_Browsing_Wrapped.md`.
 
 ---
 

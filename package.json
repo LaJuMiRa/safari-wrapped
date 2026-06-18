@@ -6,7 +6,7 @@
   "description": "Browsing Wrapped — lokale Safari-Extension für Spotify-Wrapped-artige Browsing-Rückblicke.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build && vite build -c vite.wrapped.config.js"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -104,6 +104,14 @@ export async function getKeywordsRange(start, end) {
   return reqProm(idx.getAll(IDBKeyRange.bound(start, end)));
 }
 
+// Rohe Ereignisse im Zeitfenster [startTs, endTs] (ms-Epoch) – für die
+// Stundenverteilung in der Wrapped-Story.
+export async function getEventsBetween(startTs, endTs) {
+  const db = await openDB();
+  const idx = db.transaction('events', 'readonly').objectStore('events').index('ts');
+  return reqProm(idx.getAll(IDBKeyRange.bound(startTs, endTs)));
+}
+
 // Löscht rohe Ereignisse älter als cutoffTs (ms-Epoch).
 export async function pruneEvents(cutoffTs) {
   const db = await openDB();

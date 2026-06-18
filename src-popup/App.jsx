@@ -61,6 +61,14 @@ async function setSetting(patch) {
   if (hasChrome) await chrome.storage.local.set(patch);
 }
 
+function openWrapped(period) {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.runtime) {
+      chrome.tabs.create({ url: chrome.runtime.getURL(`wrapped/index.html?period=${period}`) });
+    }
+  } catch { /* noop */ }
+}
+
 /* ---------- Wiederverwendbare Zeile ------------------------------------- */
 
 function DomainRow({ r, i, maxMs }) {
@@ -211,6 +219,10 @@ export default function App() {
       </div>
 
       {paused && <div className="banner">Tracking pausiert</div>}
+
+      <button className="wrapped-cta" onClick={() => openWrapped(period)}>
+        ✨ {periodLabel(period)}-Wrapped ansehen
+      </button>
 
       {loading ? (
         <div className="empty">Lade…</div>
