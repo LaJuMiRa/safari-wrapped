@@ -3,6 +3,7 @@ import {
   getRange, getKeywordsRange, clearAll, todayStr,
 } from '../extension/db.js';
 import { CATEGORIES, categoryFor } from './categories.js';
+import { makeT, getLang, LANGS } from './i18n.js';
 
 /* ---------- Helfer ------------------------------------------------------- */
 
@@ -28,14 +29,10 @@ function dateNDaysAgo(n) {
 }
 
 const PERIODS = [
-  { key: 'today', label: 'Heute', days: 0 },
-  { key: 'week', label: 'Woche', days: 6 },
-  { key: 'month', label: 'Monat', days: 29 },
+  { key: 'today', days: 0 },
+  { key: 'week', days: 6 },
+  { key: 'month', days: 29 },
 ];
-
-function periodLabel(key) {
-  return (PERIODS.find((p) => p.key === key) || PERIODS[0]).label;
-}
 
 async function flushBackground() {
   try {
@@ -48,12 +45,13 @@ async function flushBackground() {
 const hasChrome = typeof chrome !== 'undefined' && chrome.storage;
 
 async function getSettings() {
-  if (!hasChrome) return { paused: false, exclude: [], retentionDays: 90 };
-  const s = await chrome.storage.local.get(['paused', 'exclude', 'retentionDays']);
+  if (!hasChrome) return { paused: false, exclude: [], retentionDays: 90, lang: 'de' };
+  const s = await chrome.storage.local.get(['paused', 'exclude', 'retentionDays', 'lang']);
   return {
     paused: !!s.paused,
     exclude: Array.isArray(s.exclude) ? s.exclude : [],
     retentionDays: typeof s.retentionDays === 'number' ? s.retentionDays : 90,
+    lang: s.lang === 'en' ? 'en' : 'de',
   };
 }
 
@@ -97,6 +95,7 @@ function DomainRow({ r, i, maxMs }) {
 /* ---------- Hauptkomponente --------------------------------------------- */
 
 export default function App() {
+  const [lang, setLang] = useState('de');
   const [period, setPeriod] = useState('today');
   const [view, setView] = useState('main'); // 'main' | 'settings' | 'allsites' | 'keywords'
   const [domains, setDomains] = useState([]);
@@ -105,6 +104,11 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [confirmClear, setConfirmClear] = useState(false);
+
+  const t = makeT(lang);
+  const pLabel = (key) => t(`per.${key}`);
+
+  useEffect(() => { getLang().then(setLang); }, []);
 
   const load = useCallback(async (p) => {
     setLoading(true);
@@ -131,7 +135,7 @@ export default function App() {
         byCat.set(c, (byCat.get(c) || 0) + d.timeMs);
       }
       const catList = [...byCat.entries()]
-        .map(([key, timeMs]) => ({ key, timeMs, ...CATEGORIES[key] }))
+        .map(([key, timeMs]) => ({ key, timeMs, color: CATEGORIES[key].color }))
         .filter((c) => c.timeMs > 0)
         .sort((a, b) => b.timeMs - a.timeMs);
       setCats(catList);
@@ -160,6 +164,11 @@ export default function App() {
     await setSetting({ paused: next });
   }
 
+  async function changeLang(next) {
+    setLang(next);
+    await setSetting({ lang: next });
+  }
+
   async function doClear() {
     await clearAll();
     setConfirmClear(false);
@@ -167,13 +176,13 @@ export default function App() {
   }
 
   if (view === 'settings') {
-    return <Settings onBack={() => { setView('main'); load(period); }} />;
+    return <Settings t={t} lang={lang} onLang={changeLang} onBack={() => { setView('main'); load(period); }} />;
   }
   if (view === 'allsites') {
-    return <AllSites domains={domains} maxMs={maxMs} label={periodLabel(period)} onBack={() => setView('main')} />;
+    return <AllSites t={t} lang={lang} domains={domains} maxMs={maxMs} label={pLabel(period)} onBack={() => setView('main')} />;
   }
   if (view === 'keywords') {
-    return <Keywords keywords={keywords} label={periodLabel(period)} onBack={() => setView('main')} />;
+    return <Keywords t={t} lang={lang} keywords={keywords} label={pLabel(period)} onBack={() => setView('main')} />;
   }
 
   return (
@@ -187,7 +196,7 @@ export default function App() {
           <button className={`pause ${paused ? 'on' : ''}`} onClick={togglePause}>
             {paused ? '▶' : '❚❚'}
           </button>
-          <button className="gear" title="Einstellungen" onClick={() => setView('settings')}>⚙</button>
+          <button className="gear" title={t('settings.title')} onClick={() => setView('settings')}>⚙</button>
         </div>
       </header>
 
@@ -198,7 +207,7 @@ export default function App() {
             className={`tab ${period === p.key ? 'active' : ''}`}
             onClick={() => setPeriod(p.key)}
           >
-            {p.label}
+            {pLabel(p.key)}
           </button>
         ))}
       </div>
@@ -206,43 +215,40 @@ export default function App() {
       <div className="summary">
         <div className="stat">
           <div className="num">{fmtTime(totalMs)}</div>
-          <div className="lbl">aktiv</div>
+          <div className="lbl">{t('sum.active')}</div>
         </div>
         <div className="stat">
           <div className="num">{totalVisits}</div>
-          <div className="lbl">Aufrufe</div>
+          <div className="lbl">{t('sum.visits')}</div>
         </div>
         <div className="stat">
           <div className="num">{domains.length}</div>
-          <div className="lbl">Domains</div>
+          <div className="lbl">{t('sum.domains')}</div>
         </div>
       </div>
 
-      {paused && <div className="banner">Tracking pausiert</div>}
+      {paused && <div className="banner">{t('banner.paused')}</div>}
 
       <button className="wrapped-cta" onClick={() => openWrapped(period)}>
-        ✨ {periodLabel(period)}-Wrapped ansehen
+        {t('cta.wrapped', { period: pLabel(period) })}
       </button>
 
       {loading ? (
-        <div className="empty">Lade…</div>
+        <div className="empty">{t('common.loading')}</div>
       ) : domains.length === 0 ? (
-        <div className="empty">
-          Noch keine Daten in diesem Zeitraum.<br />
-          Surf ein bisschen — die Liste füllt sich automatisch.
-        </div>
+        <div className="empty">{t('empty.main')}</div>
       ) : (
         <>
           {cats.length > 0 && (
             <section>
-              <div className="section-title">Kategorien</div>
+              <div className="section-title">{t('sec.categories')}</div>
               <div className="catbar">
                 {cats.map((c) => (
                   <span
                     key={c.key}
                     className="catseg"
                     style={{ width: `${(c.timeMs / totalMs) * 100}%`, background: c.color }}
-                    title={`${c.label} · ${fmtTime(c.timeMs)}`}
+                    title={`${t(`cat.${c.key}`)} · ${fmtTime(c.timeMs)}`}
                   />
                 ))}
               </div>
@@ -250,7 +256,7 @@ export default function App() {
                 {cats.slice(0, 5).map((c) => (
                   <span key={c.key} className="catlegitem">
                     <span className="catdot" style={{ background: c.color }} />
-                    {c.label}
+                    {t(`cat.${c.key}`)}
                   </span>
                 ))}
               </div>
@@ -258,7 +264,7 @@ export default function App() {
           )}
 
           <section>
-            <div className="section-title">Top-Websites</div>
+            <div className="section-title">{t('sec.topsites')}</div>
             <ol className="list">
               {domains.slice(0, 5).map((r, i) => (
                 <DomainRow key={r.domain} r={r} i={i} maxMs={maxMs} />
@@ -268,10 +274,10 @@ export default function App() {
 
           <div className="navbtns">
             <button className="navbtn" onClick={() => setView('allsites')}>
-              Alle Websites ({domains.length}) →
+              {t('nav.allsites', { n: domains.length })}
             </button>
             <button className="navbtn" onClick={() => setView('keywords')}>
-              Suchbegriffe ({keywords.length}) →
+              {t('nav.keywords', { n: keywords.length })}
             </button>
           </div>
         </>
@@ -280,14 +286,14 @@ export default function App() {
       <footer className="foot">
         {confirmClear ? (
           <span className="confirm">
-            Wirklich löschen?
-            <button className="confirm-yes" onClick={doClear}>Ja</button>
-            <button className="confirm-no" onClick={() => setConfirmClear(false)}>Nein</button>
+            {t('clear.confirm')}
+            <button className="confirm-yes" onClick={doClear}>{t('common.yes')}</button>
+            <button className="confirm-no" onClick={() => setConfirmClear(false)}>{t('common.no')}</button>
           </span>
         ) : (
-          <button className="clear" onClick={() => setConfirmClear(true)}>Daten löschen</button>
+          <button className="clear" onClick={() => setConfirmClear(true)}>{t('clear.btn')}</button>
         )}
-        <span className="hint">100 % lokal</span>
+        <span className="hint">{t('hint.local')}</span>
       </footer>
     </div>
   );
@@ -295,17 +301,16 @@ export default function App() {
 
 /* ---------- Unterseite: Alle Websites ----------------------------------- */
 
-function AllSites({ domains, maxMs, label, onBack }) {
+function AllSites({ t, domains, maxMs, label, onBack }) {
   return (
     <div className="wrap">
-      <header className="head">
-        <button className="gear" onClick={onBack} title="Zurück">←</button>
-        <div className="brand" style={{ flex: 1, justifyContent: 'center' }}>Alle Websites</div>
-        <span style={{ width: 28 }} />
+      <header className="subhead">
+        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
+        <span className="subtitle">{t('page.allsites')}</span>
       </header>
-      <div className="hintline" style={{ textAlign: 'center' }}>{label} · {domains.length} Domains</div>
+      <div className="hintline" style={{ textAlign: 'center' }}>{t('allsites.count', { label, n: domains.length })}</div>
       {domains.length === 0 ? (
-        <div className="empty">Keine Daten.</div>
+        <div className="empty">{t('common.nodata')}</div>
       ) : (
         <ol className="list scrolllist">
           {domains.map((r, i) => (
@@ -319,21 +324,17 @@ function AllSites({ domains, maxMs, label, onBack }) {
 
 /* ---------- Unterseite: Suchbegriffe (alphabetisch) --------------------- */
 
-function Keywords({ keywords, label, onBack }) {
-  const sorted = [...keywords].sort((a, b) => a.term.localeCompare(b.term, 'de'));
+function Keywords({ t, lang, keywords, label, onBack }) {
+  const sorted = [...keywords].sort((a, b) => a.term.localeCompare(b.term, lang));
   return (
     <div className="wrap">
-      <header className="head">
-        <button className="gear" onClick={onBack} title="Zurück">←</button>
-        <div className="brand" style={{ flex: 1, justifyContent: 'center' }}>Suchbegriffe</div>
-        <span style={{ width: 28 }} />
+      <header className="subhead">
+        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
+        <span className="subtitle">{t('page.keywords')}</span>
       </header>
-      <div className="hintline" style={{ textAlign: 'center' }}>{label} · {sorted.length} Begriffe</div>
+      <div className="hintline" style={{ textAlign: 'center' }}>{t('keywords.count', { label, n: sorted.length })}</div>
       {sorted.length === 0 ? (
-        <div className="empty">
-          Noch keine Suchbegriffe erfasst.<br />
-          Such mal über Google &amp; Co. — sie erscheinen hier.
-        </div>
+        <div className="empty">{t('keywords.empty')}</div>
       ) : (
         <div className="kwlist scrolllist">
           {sorted.map((k) => (
@@ -350,7 +351,7 @@ function Keywords({ keywords, label, onBack }) {
 
 /* ---------- Einstellungen ------------------------------------------------ */
 
-function Settings({ onBack }) {
+function Settings({ t, lang, onLang, onBack }) {
   const [exclude, setExclude] = useState([]);
   const [retentionDays, setRetentionDays] = useState(90);
   const [input, setInput] = useState('');
@@ -382,19 +383,33 @@ function Settings({ onBack }) {
 
   return (
     <div className="wrap">
-      <header className="head">
-        <button className="gear" onClick={onBack} title="Zurück">←</button>
-        <div className="brand" style={{ flex: 1, justifyContent: 'center' }}>Einstellungen</div>
-        <span style={{ width: 28 }} />
+      <header className="subhead">
+        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
+        <span className="subtitle">{t('page.settings')}</span>
       </header>
 
       <section>
-        <div className="section-title">Ausschlussliste</div>
-        <div className="hintline">Diese Domains werden nie getrackt (z. B. Banking).</div>
+        <div className="section-title">{t('set.lang.title')}</div>
+        <div className="langswitch">
+          {LANGS.map((l) => (
+            <button
+              key={l.key}
+              className={`langbtn ${lang === l.key ? 'on' : ''}`}
+              onClick={() => onLang(l.key)}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="section-title">{t('set.exclude.title')}</div>
+        <div className="hintline">{t('set.exclude.hint')}</div>
         <div className="addrow">
           <input
             className="textin"
-            placeholder="z. B. meinebank.de"
+            placeholder={t('set.exclude.placeholder')}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') addExclude(); }}
@@ -402,7 +417,7 @@ function Settings({ onBack }) {
           <button className="addbtn" onClick={addExclude}>+</button>
         </div>
         {exclude.length === 0 ? (
-          <div className="hintline">Noch keine Domains ausgeschlossen.</div>
+          <div className="hintline">{t('set.exclude.empty')}</div>
         ) : (
           <ul className="taglist">
             {exclude.map((d) => (
@@ -416,17 +431,17 @@ function Settings({ onBack }) {
       </section>
 
       <section>
-        <div className="section-title">Aufbewahrung roher Ereignisse</div>
-        <div className="hintline">Tages-Statistiken bleiben immer erhalten; das betrifft nur die minutengenaue Historie.</div>
+        <div className="section-title">{t('set.retention.title')}</div>
+        <div className="hintline">{t('set.retention.hint')}</div>
         <select className="select" value={retentionDays} onChange={changeRetention}>
-          <option value={30}>30 Tage</option>
-          <option value={90}>90 Tage</option>
-          <option value={0}>Unbegrenzt</option>
+          <option value={30}>{t('set.retention.30')}</option>
+          <option value={90}>{t('set.retention.90')}</option>
+          <option value={0}>{t('set.retention.0')}</option>
         </select>
       </section>
 
       <footer className="foot">
-        <span className="hint">Alle Daten bleiben auf deinem Gerät.</span>
+        <span className="hint">{t('set.footer')}</span>
       </footer>
     </div>
   );

@@ -5,11 +5,12 @@ import {
   getRange, getKeywordsRange, getEventsBetween, todayStr,
 } from '../extension/db.js';
 import { CATEGORIES, categoryFor } from '../src-popup/categories.js';
+import { groupTerms, stemCountMap } from '../src-popup/themes.js';
 
 export const PERIODS = {
-  week: { label: 'Woche', days: 7 },
-  month: { label: 'Monat', days: 30 },
-  year: { label: 'Jahr', days: 365 },
+  week: { days: 7 },
+  month: { days: 30 },
+  year: { days: 365 },
 };
 
 function shiftDate(base, deltaDays) {
@@ -41,12 +42,12 @@ function classifyPersonality(hist) {
   let peak = 0;
   for (let h = 1; h < 24; h++) if (hist[h] > hist[peak]) peak = h;
   const nightShare = (hist.slice(22).reduce((s, n) => s + n, 0) + hist.slice(0, 5).reduce((s, n) => s + n, 0)) / total;
-  let label, emoji;
-  if (peak >= 5 && peak < 9) { label = 'Frühaufsteher'; emoji = '🌅'; }
-  else if (peak >= 9 && peak < 17) { label = 'Tagmensch'; emoji = '☀️'; }
-  else if (peak >= 17 && peak < 22) { label = 'Feierabend-Surfer'; emoji = '🌆'; }
-  else { label = 'Nachteule'; emoji = '🦉'; }
-  return { label, emoji, peakHour: peak, nightShare };
+  let key, emoji;
+  if (peak >= 5 && peak < 9) { key = 'frueh'; emoji = '🌅'; }
+  else if (peak >= 9 && peak < 17) { key = 'tag'; emoji = '☀️'; }
+  else if (peak >= 17 && peak < 22) { key = 'feierabend'; emoji = '🌆'; }
+  else { key = 'nacht'; emoji = '🦉'; }
+  return { key, emoji, peakHour: peak, nightShare };
 }
 
 export async function buildWrapped(periodKey) {
@@ -73,7 +74,7 @@ export async function buildWrapped(periodKey) {
     byCat.set(c, (byCat.get(c) || 0) + d.timeMs);
   }
   const categories = [...byCat.entries()]
-    .map(([key, ms]) => ({ key, timeMs: ms, ...CATEGORIES[key] }))
+    .map(([key, ms]) => ({ key, timeMs: ms, color: CATEGORIES[key].color }))
     .filter((c) => c.timeMs > 0)
     .sort((a, b) => b.timeMs - a.timeMs);
 
@@ -81,9 +82,15 @@ export async function buildWrapped(periodKey) {
   const curK = aggregateKeywords(kRows);
   const keywords = [...curK.entries()].map(([term, count]) => ({ term, count }))
     .sort((a, b) => b.count - a.count);
-  const prevMap = aggregateKeywords(prevK);
-  const trends = [...curK.entries()]
-    .map(([term, count]) => ({ term, count, prev: prevMap.get(term) || 0, delta: count - (prevMap.get(term) || 0) }))
+
+  // Themen = lokal gruppierte Suchbegriffe (Wortstämme zusammengefasst).
+  const themes = groupTerms(keywords);
+
+  // Trends: Stamm-basierter Vergleich mit der Vorperiode.
+  const prevItems = [...aggregateKeywords(prevK).entries()].map(([term, count]) => ({ term, count }));
+  const prevStem = stemCountMap(prevItems);
+  const trends = themes
+    .map((g) => ({ label: g.label, count: g.count, prev: prevStem.get(g.key) || 0, delta: g.count - (prevStem.get(g.key) || 0) }))
     .filter((t) => t.delta > 0)
     .sort((a, b) => b.delta - a.delta)
     .slice(0, 5);
@@ -92,11 +99,29 @@ export async function buildWrapped(periodKey) {
   const startTs = new Date(`${start}T00:00:00`).getTime();
   const events = await getEventsBetween(startTs, Date.now());
   const hist = new Array(24).fill(0);
+  const wd = new Array(7).fill(0);
   for (const e of events) {
-    const h = new Date(e.ts).getHours();
+    const dt = new Date(e.ts);
+    const h = dt.getHours();
     if (h >= 0 && h < 24) hist[h] += 1;
+    wd[dt.getDay()] += 1;
   }
   const personality = classifyPersonality(hist);
+
+  // Aktivster Wochentag
+  let busiestWeekday = null;
+  const wdTotal = wd.reduce((s, n) => s + n, 0);
+  if (wdTotal) {
+    let bw = 0;
+    for (let i = 1; i < 7; i++) if (wd[i] > wd[bw]) bw = i;
+    busiestWeekday = { index: bw, count: wd[bw], share: wd[bw] / wdTotal };
+  }
+
+  // Lockere Zeit-Vergleiche (für eine Fun-Folie)
+  const funFacts = {
+    episodes: Math.round(totalMs / (45 * 60000)),
+    movies: +(totalMs / (2 * 3600000)).toFixed(1),
+  };
 
   // Aktivster Tag
   const byDay = new Map();
@@ -107,10 +132,10 @@ export async function buildWrapped(periodKey) {
   }
 
   return {
-    periodKey, periodLabel: period.label, start, end,
+    periodKey, start, end,
     domains, totalMs, totalVisits,
-    categories, keywords, trends,
-    hist, personality, busiestDay,
+    categories, keywords, themes, trends,
+    hist, personality, busiestDay, busiestWeekday, funFacts,
     topDomain: domains[0] || null,
     domainCount: domains.length,
   };

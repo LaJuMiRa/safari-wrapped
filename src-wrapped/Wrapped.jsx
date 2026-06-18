@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildWrapped, PERIODS } from './data.js';
 import { makeShareImage } from './share.js';
+import { launchConfetti } from './confetti.js';
+import { makeT, getLang } from '../src-popup/i18n.js';
 
 /* ---------- Helfer ---------- */
 
@@ -17,9 +19,9 @@ function bigTime(ms) {
   const h = ms / 3600000;
   if (h >= 1) {
     const num = (h < 10 ? h.toFixed(1) : String(Math.round(h))).replace('.', ',');
-    return { num, unit: 'Stunden aktiv' };
+    return { num, unitKey: 'w.total.hours' };
   }
-  return { num: String(Math.max(1, Math.round(ms / 60000))), unit: 'Minuten aktiv' };
+  return { num: String(Math.max(1, Math.round(ms / 60000))), unitKey: 'w.total.minutes' };
 }
 
 function colorFor(domain) {
@@ -41,41 +43,52 @@ const BG = [
   'linear-gradient(160deg,#1db954,#7b5cff)',
 ];
 
-/* ---------- Folien-Bausteine ---------- */
-
 function Slide({ children }) {
   return <div className="slide-inner">{children}</div>;
 }
 
-function buildSlides(d) {
+/* ---------- Folien ---------- */
+
+function buildSlides(d, t) {
   const slides = [];
+  const period = t(`per.${d.periodKey}`);
 
   slides.push(() => (
     <Slide>
       <div className="kicker">Browsing Wrapped</div>
-      <h1 className="title">Dein {d.periodLabel}<br />im Web</h1>
+      <h1 className="title">{t('w.intro.title', { period })}</h1>
       <div className="sub">{d.start} – {d.end}</div>
-      <div className="tap-hint">Tippe dich durch ✨</div>
+      <div className="tap-hint">{t('w.intro.hint')}</div>
     </Slide>
   ));
 
   const bt = bigTime(d.totalMs);
   slides.push(() => (
     <Slide>
-      <div className="kicker">Insgesamt</div>
+      <div className="kicker">{t('w.total.kicker')}</div>
       <div className="huge">{bt.num}</div>
-      <div className="huge-unit">{bt.unit}</div>
-      <div className="sub">{d.totalVisits} Seitenaufrufe in diesem Zeitraum</div>
+      <div className="huge-unit">{t(bt.unitKey)}</div>
+      <div className="sub">{t('w.total.sub', { visits: d.totalVisits })}</div>
     </Slide>
   ));
 
+  if (d.funFacts.episodes >= 1) {
+    slides.push(() => (
+      <Slide>
+        <div className="kicker">{t('w.fun.kicker')}</div>
+        <h2 className="title2">{t('w.fun.title', { n: d.funFacts.episodes })}</h2>
+        <div className="sub">{t('w.fun.sub', { movies: String(d.funFacts.movies), period })}</div>
+      </Slide>
+    ));
+  }
+
   slides.push(() => (
     <Slide>
-      <div className="kicker">Unterwegs auf</div>
+      <div className="kicker">{t('w.count.kicker')}</div>
       <div className="huge">{d.domainCount}</div>
-      <div className="huge-unit">Websites</div>
+      <div className="huge-unit">{t('w.count.unit')}</div>
       {d.busiestDay && (
-        <div className="sub">Aktivster Tag: {d.busiestDay.date} · {fmtTime(d.busiestDay.timeMs)}</div>
+        <div className="sub">{t('w.count.sub', { date: d.busiestDay.date, time: fmtTime(d.busiestDay.timeMs) })}</div>
       )}
     </Slide>
   ));
@@ -83,12 +96,12 @@ function buildSlides(d) {
   if (d.topDomain) {
     slides.push(() => (
       <Slide>
-        <div className="kicker">Dein Lieblingsort im Netz</div>
+        <div className="kicker">{t('w.top1.kicker')}</div>
         <div className="hero-tile" style={{ background: colorFor(d.topDomain.domain) }}>
           {d.topDomain.domain.charAt(0).toUpperCase()}
         </div>
         <h2 className="title2">{d.topDomain.domain}</h2>
-        <div className="sub">{fmtTime(d.topDomain.timeMs)} · {d.topDomain.visits} Aufrufe</div>
+        <div className="sub">{t('w.top1.sub', { time: fmtTime(d.topDomain.timeMs), visits: d.topDomain.visits })}</div>
       </Slide>
     ));
   }
@@ -97,7 +110,7 @@ function buildSlides(d) {
     const max = d.domains[0].timeMs || 1;
     slides.push(() => (
       <Slide>
-        <div className="kicker">Deine Top 5</div>
+        <div className="kicker">{t('w.top5.kicker')}</div>
         <ol className="toplist">
           {d.domains.slice(0, 5).map((r, i) => (
             <li key={r.domain}>
@@ -116,25 +129,33 @@ function buildSlides(d) {
     const p = d.personality;
     slides.push(() => (
       <Slide>
-        <div className="kicker">Dein Browsing-Typ</div>
+        <div className="kicker">{t('w.pers.kicker')}</div>
         <div className="emoji">{p.emoji}</div>
-        <h2 className="title2">{p.label}</h2>
-        <div className="sub">
-          Spitzenzeit gegen {p.peakHour} Uhr · {Math.round(p.nightShare * 100)} % deiner Aufrufe nachts
-        </div>
+        <h2 className="title2">{t(`pers.${p.key}`)}</h2>
+        <div className="sub">{t('w.pers.sub', { hour: p.peakHour, pct: Math.round(p.nightShare * 100) })}</div>
       </Slide>
     ));
   }
 
-  if (d.keywords.length) {
-    const maxK = d.keywords[0].count || 1;
+  if (d.busiestWeekday) {
     slides.push(() => (
       <Slide>
-        <div className="kicker">Deine Themen</div>
+        <div className="kicker">{t('w.wd.kicker')}</div>
+        <h2 className="title2">{t(`wd.${d.busiestWeekday.index}`)}</h2>
+        <div className="sub">{t('w.wd.sub', { pct: Math.round(d.busiestWeekday.share * 100) })}</div>
+      </Slide>
+    ));
+  }
+
+  if (d.themes.length) {
+    const maxK = d.themes[0].count || 1;
+    slides.push(() => (
+      <Slide>
+        <div className="kicker">{t('w.themes.kicker')}</div>
         <div className="wcloud">
-          {d.keywords.slice(0, 24).map((k) => (
-            <span key={k.term} style={{ fontSize: `${18 + (k.count / maxK) * 30}px`, opacity: 0.6 + (k.count / maxK) * 0.4 }}>
-              {k.term}
+          {d.themes.slice(0, 22).map((th) => (
+            <span key={th.key} style={{ fontSize: `${18 + (th.count / maxK) * 30}px`, opacity: 0.6 + (th.count / maxK) * 0.4 }}>
+              {th.label}
             </span>
           ))}
         </div>
@@ -145,16 +166,14 @@ function buildSlides(d) {
   if (d.trends.length) {
     slides.push(() => (
       <Slide>
-        <div className="kicker">Im Aufwind</div>
-        <h2 className="title2">Das beschäftigt dich gerade</h2>
+        <div className="kicker">{t('w.trend.kicker')}</div>
+        <h2 className="title2">{t('w.trend.title')}</h2>
         <div className="trendlist">
-          {d.trends.map((t) => (
-            <span key={t.term} className="trendchip">
-              {t.term} <b>+{t.delta}</b>
-            </span>
+          {d.trends.map((tr) => (
+            <span key={tr.label} className="trendchip">{tr.label} <b>+{tr.delta}</b></span>
           ))}
         </div>
-        <div className="sub">stärker als im {d.periodLabel} davor</div>
+        <div className="sub">{t('w.trend.sub', { period })}</div>
       </Slide>
     ));
   }
@@ -163,39 +182,39 @@ function buildSlides(d) {
     const top = d.categories[0];
     slides.push(() => (
       <Slide>
-        <div className="kicker">Deine Kategorien</div>
+        <div className="kicker">{t('w.cats.kicker')}</div>
         <div className="catbar-big">
           {d.categories.map((c) => (
-            <span key={c.key} style={{ width: `${(c.timeMs / d.totalMs) * 100}%`, background: c.color }} title={c.label} />
+            <span key={c.key} style={{ width: `${(c.timeMs / d.totalMs) * 100}%`, background: c.color }} />
           ))}
         </div>
         <div className="catleg-big">
           {d.categories.slice(0, 6).map((c) => (
-            <span key={c.key}><i style={{ background: c.color }} />{c.label} · {fmtTime(c.timeMs)}</span>
+            <span key={c.key}><i style={{ background: c.color }} />{t(`cat.${c.key}`)} · {fmtTime(c.timeMs)}</span>
           ))}
         </div>
-        <div className="sub">Größte Kategorie: <b>{top.label}</b></div>
+        <div className="sub">{t('w.cats.sub', { label: t(`cat.${top.key}`) })}</div>
       </Slide>
     ));
   }
 
   slides.push(() => (
     <Slide>
-      <div className="kicker">Das war dein {d.periodLabel}</div>
+      <div className="kicker">{t('w.outro.kicker', { period })}</div>
       <div className="recap">
-        <div><b>{bigTime(d.totalMs).num}</b><span>{bigTime(d.totalMs).unit}</span></div>
-        <div><b>{d.domainCount}</b><span>Websites</span></div>
-        <div><b>{d.keywords.length}</b><span>Suchbegriffe</span></div>
+        <div><b>{bt.num}</b><span>{t(bt.unitKey)}</span></div>
+        <div><b>{d.domainCount}</b><span>{t('w.count.unit')}</span></div>
+        <div><b>{d.keywords.length}</b><span>{t('w.outro.searches')}</span></div>
       </div>
       <div className="outro-actions">
-        <button className="share-btn" onClick={(e) => { e.stopPropagation(); makeShareImage(d); }}>
-          📷 Als Bild speichern
+        <button className="share-btn" onClick={(e) => { e.stopPropagation(); makeShareImage(d, t); }}>
+          {t('w.outro.share')}
         </button>
         <button className="close-btn" onClick={(e) => { e.stopPropagation(); window.close(); }}>
-          Schließen
+          {t('w.close')}
         </button>
       </div>
-      <div className="sub">100 % lokal erstellt · nichts verlässt dein Gerät</div>
+      <div className="sub">{t('w.outro.sub')}</div>
     </Slide>
   ));
 
@@ -212,16 +231,19 @@ export default function Wrapped() {
     } catch { return 'week'; }
   }, []);
 
+  const [lang, setLang] = useState('de');
   const [period, setPeriod] = useState(initialPeriod);
   const [data, setData] = useState(null);
   const [idx, setIdx] = useState(0);
   const [loading, setLoading] = useState(true);
-  const slidesRef = useRef([]);
+
+  const t = makeT(lang);
+
+  useEffect(() => { getLang().then(setLang); }, []);
 
   const reload = useCallback(async (p) => {
     setLoading(true);
     const d = await buildWrapped(p);
-    slidesRef.current = buildSlides(d);
     setData(d);
     setIdx(0);
     setLoading(false);
@@ -229,56 +251,62 @@ export default function Wrapped() {
 
   useEffect(() => { reload(period); }, [period, reload]);
 
-  const count = slidesRef.current.length;
+  // Folien aus Daten + Sprache ableiten (neu bei Sprachwechsel).
+  const slides = useMemo(() => (data ? buildSlides(data, t) : []), [data, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = slides.length;
+
   const next = useCallback(() => setIdx((i) => Math.min(i + 1, count - 1)), [count]);
   const prev = useCallback(() => setIdx((i) => Math.max(i - 1, 0)), []);
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'ArrowRight' || e.key === ' ') { next(); }
-      else if (e.key === 'ArrowLeft') { prev(); }
-      else if (e.key === 'Escape') { window.close(); }
+      if (e.key === 'ArrowRight' || e.key === ' ') next();
+      else if (e.key === 'ArrowLeft') prev();
+      else if (e.key === 'Escape') window.close();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [next, prev]);
 
+  useEffect(() => {
+    if (!loading && data && count > 0 && idx === count - 1) launchConfetti();
+  }, [idx, count, loading, data]);
+
   if (loading || !data) {
-    return <div className="stage center"><div className="loader">Dein Wrapped wird erstellt…</div></div>;
+    return <div className="stage center"><div className="loader">{t('w.loading')}</div></div>;
   }
 
-  const empty = data.domainCount === 0;
-  if (empty) {
+  if (data.domainCount === 0) {
     return (
       <div className="stage center" style={{ background: BG[0] }}>
         <div className="slide-inner">
-          <h1 className="title">Noch zu wenig Daten</h1>
-          <div className="sub">Für ein {data.periodLabel}-Wrapped fehlt noch Verlauf.<br />Surf ein paar Tage — dann wird's bunt.</div>
+          <h1 className="title">{t('w.empty.title')}</h1>
+          <div className="sub">{t('w.empty.sub', { period: t(`per.${period}`) })}</div>
           <div className="periodswitch" onClick={(e) => e.stopPropagation()}>
-            {Object.entries(PERIODS).map(([k, v]) => (
-              <button key={k} className={k === period ? 'on' : ''} onClick={() => setPeriod(k)}>{v.label}</button>
+            {Object.keys(PERIODS).map((k) => (
+              <button key={k} className={k === period ? 'on' : ''} onClick={() => setPeriod(k)}>{t(`per.${k}`)}</button>
             ))}
           </div>
-          <button className="close-btn" onClick={() => window.close()}>Schließen</button>
+          <button className="close-btn" onClick={() => window.close()}>{t('w.close')}</button>
         </div>
       </div>
     );
   }
 
-  const Cur = slidesRef.current[idx];
+  const Cur = slides[Math.min(idx, count - 1)];
 
   return (
     <div className="stage" style={{ background: BG[idx % BG.length] }} onClick={next}>
       <div className="progress" onClick={(e) => e.stopPropagation()}>
-        {slidesRef.current.map((_, i) => (
+        {slides.map((_, i) => (
           <span key={i} className="pseg"><i style={{ width: i <= idx ? '100%' : '0%' }} /></span>
         ))}
       </div>
 
       <div className="topbar" onClick={(e) => e.stopPropagation()}>
         <div className="periodswitch small">
-          {Object.entries(PERIODS).map(([k, v]) => (
-            <button key={k} className={k === period ? 'on' : ''} onClick={() => setPeriod(k)}>{v.label}</button>
+          {Object.keys(PERIODS).map((k) => (
+            <button key={k} className={k === period ? 'on' : ''} onClick={() => setPeriod(k)}>{t(`per.${k}`)}</button>
           ))}
         </div>
         <button className="x" onClick={() => window.close()}>✕</button>

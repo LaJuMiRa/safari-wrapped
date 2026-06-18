@@ -90,13 +90,23 @@ body {
 
 /* Folien */
 .slide { width: 100%; max-width: 660px; }
-.slide-inner {
-  text-align: center;
-  animation: slideUp 0.5s ease both;
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(24px); }
+.slide-inner { text-align: center; }
+.slide-inner > * { animation: rise 0.55s ease both; }
+.slide-inner > *:nth-child(1) { animation-delay: 0.04s; }
+.slide-inner > *:nth-child(2) { animation-delay: 0.14s; }
+.slide-inner > *:nth-child(3) { animation-delay: 0.24s; }
+.slide-inner > *:nth-child(4) { animation-delay: 0.34s; }
+.slide-inner > *:nth-child(5) { animation-delay: 0.44s; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
 }
 
 .kicker {
@@ -106,7 +116,7 @@ body {
   opacity: 0.85;
   margin-bottom: 22px;
 }
-.title { font-size: 64px; font-weight: 800; line-height: 1.05; }
+.title { font-size: 64px; font-weight: 800; line-height: 1.05; white-space: pre-line; }
 .title2 { font-size: 40px; font-weight: 800; margin: 10px 0; }
 .sub { font-size: 19px; opacity: 0.85; margin-top: 18px; line-height: 1.5; }
 .tap-hint { margin-top: 44px; font-size: 15px; opacity: 0.7; }

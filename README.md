@@ -6,12 +6,13 @@ Websites, Verweildauer und – ab Phase 2 – deine häufigsten Themen & Suchanf
 
 Alle Daten bleiben auf deinem Gerät (IndexedDB). Kein Server, kein Account, kein Sync.
 
-> **Status: Phase 3.** Zusätzlich zum Tracking (Domains, Besuche, Verweildauer,
-> Suchbegriffe) gibt es jetzt die **animierte Wrapped-Story**: ein Button im Popup
-> öffnet eine Vollbild-Seite (neuer Tab) mit durchklickbaren Folien für
-> Woche/Monat/Jahr — Gesamtzeit, Top-5, Lieblingsseite, Browsing-Typ, Themen,
-> Trends ggü. der Vorperiode, Kategorien — plus „Als Bild speichern" (lokal
-> erzeugtes PNG). Das vollständige Konzept steht in `Konzept_Browsing_Wrapped.md`.
+> **Status: Phase 4 (Feinschliff).** Tracking (Domains, Besuche, Verweildauer,
+> Suchbegriffe) + **animierte Wrapped-Story** (Vollbild-Tab, Folien für
+> Woche/Monat/Jahr): Gesamtzeit, Zeit-Vergleich, Top-5, Lieblingsseite,
+> Browsing-Typ, aktivster Wochentag, **gruppierte Themen** (lokaler DE/EN-Stemmer),
+> Trends ggü. Vorperiode, Kategorien, Outro mit Konfetti und „Als Bild speichern"
+> (lokales PNG). Suchbegriffe werden für die Themen-Folien lokal zu Wortstämmen
+> gebündelt (`src-popup/themes.js`). Konzept: `Konzept_Browsing_Wrapped.md`.
 
 ---
 
