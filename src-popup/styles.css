@@ -263,6 +263,49 @@ section { margin-bottom: 16px; }
 .cloud { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
 .kw { color: var(--fg); line-height: 1.2; }
 
+/* Navigationsbuttons (Alle Websites / Suchbegriffe) */
+.navbtns { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.navbtn {
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--fg);
+  font-size: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.navbtn:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* Scrollbare Unterseiten-Listen */
+.scrolllist { max-height: 360px; overflow-y: auto; padding-right: 2px; }
+
+/* Suchbegriff-Liste (alphabetisch) */
+.kwlist { display: flex; flex-direction: column; gap: 4px; }
+.kwitem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border-radius: 8px;
+  padding: 7px 11px;
+}
+.kwterm { font-size: 13px; }
+.kwcount { font-size: 11px; color: var(--muted); }
+
+/* Inline-Löschbestätigung */
+.confirm { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.confirm-yes, .confirm-no {
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.confirm-yes { background: #ff6b6b; color: #fff; }
+.confirm-no { background: rgba(255, 255, 255, 0.1); color: var(--fg); }
+
 /* Einstellungen */
 .hintline { font-size: 11px; color: var(--muted); margin: 0 2px 8px; line-height: 1.4; }
 .addrow { display: flex; gap: 6px; margin-bottom: 8px; }

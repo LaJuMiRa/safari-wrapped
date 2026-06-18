@@ -33,6 +33,10 @@ const PERIODS = [
   { key: 'month', label: 'Monat', days: 29 },
 ];
 
+function periodLabel(key) {
+  return (PERIODS.find((p) => p.key === key) || PERIODS[0]).label;
+}
+
 async function flushBackground() {
   try {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
@@ -57,16 +61,42 @@ async function setSetting(patch) {
   if (hasChrome) await chrome.storage.local.set(patch);
 }
 
+/* ---------- Wiederverwendbare Zeile ------------------------------------- */
+
+function DomainRow({ r, i, maxMs }) {
+  return (
+    <li className="row">
+      <span className="rank">{i + 1}</span>
+      <span className="favwrap">
+        <span className="fav" style={{ background: colorFor(r.domain) }}>
+          {r.domain.charAt(0).toUpperCase()}
+        </span>
+      </span>
+      <span className="meta">
+        <span className="domain">{r.domain}</span>
+        <span className="bar">
+          <span className="fill" style={{ width: maxMs ? `${Math.max(4, (r.timeMs / maxMs) * 100)}%` : '4%' }} />
+        </span>
+      </span>
+      <span className="vals">
+        <span className="time">{fmtTime(r.timeMs)}</span>
+        <span className="visits">{r.visits}×</span>
+      </span>
+    </li>
+  );
+}
+
 /* ---------- Hauptkomponente --------------------------------------------- */
 
 export default function App() {
   const [period, setPeriod] = useState('today');
-  const [view, setView] = useState('main'); // 'main' | 'settings'
+  const [view, setView] = useState('main'); // 'main' | 'settings' | 'allsites' | 'keywords'
   const [domains, setDomains] = useState([]);
   const [keywords, setKeywords] = useState([]);
   const [cats, setCats] = useState([]);
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const load = useCallback(async (p) => {
     setLoading(true);
@@ -76,7 +106,6 @@ export default function App() {
       const start = dateNDaysAgo(days);
       const end = todayStr();
 
-      // Domains aggregieren
       const rows = await getRange(start, end);
       const byDomain = new Map();
       for (const r of rows) {
@@ -88,7 +117,6 @@ export default function App() {
       const domainList = [...byDomain.values()].sort((a, b) => b.timeMs - a.timeMs || b.visits - a.visits);
       setDomains(domainList);
 
-      // Kategorien aggregieren (nach Zeit)
       const byCat = new Map();
       for (const d of domainList) {
         const c = categoryFor(d.domain);
@@ -100,14 +128,10 @@ export default function App() {
         .sort((a, b) => b.timeMs - a.timeMs);
       setCats(catList);
 
-      // Keywords aggregieren
       const kRows = await getKeywordsRange(start, end);
       const byTerm = new Map();
       for (const k of kRows) byTerm.set(k.term, (byTerm.get(k.term) || 0) + k.count);
-      const kwList = [...byTerm.entries()]
-        .map(([term, count]) => ({ term, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 18);
+      const kwList = [...byTerm.entries()].map(([term, count]) => ({ term, count }));
       setKeywords(kwList);
 
       setPaused((await getSettings()).paused);
@@ -121,7 +145,6 @@ export default function App() {
   const totalMs = domains.reduce((s, r) => s + r.timeMs, 0);
   const totalVisits = domains.reduce((s, r) => s + r.visits, 0);
   const maxMs = domains.length ? domains[0].timeMs : 0;
-  const maxKw = keywords.length ? keywords[0].count : 1;
 
   async function togglePause() {
     const next = !paused;
@@ -129,14 +152,20 @@ export default function App() {
     await setSetting({ paused: next });
   }
 
-  async function onClear() {
-    if (!confirm('Wirklich alle lokal gespeicherten Browsing-Daten löschen?')) return;
+  async function doClear() {
     await clearAll();
+    setConfirmClear(false);
     load(period);
   }
 
   if (view === 'settings') {
     return <Settings onBack={() => { setView('main'); load(period); }} />;
+  }
+  if (view === 'allsites') {
+    return <AllSites domains={domains} maxMs={maxMs} label={periodLabel(period)} onBack={() => setView('main')} />;
+  }
+  if (view === 'keywords') {
+    return <Keywords keywords={keywords} label={periodLabel(period)} onBack={() => setView('main')} />;
   }
 
   return (
@@ -219,53 +248,90 @@ export default function App() {
           <section>
             <div className="section-title">Top-Websites</div>
             <ol className="list">
-              {domains.slice(0, 8).map((r, i) => (
-                <li key={r.domain} className="row">
-                  <span className="rank">{i + 1}</span>
-                  <span className="favwrap">
-                    <span className="fav" style={{ background: colorFor(r.domain) }}>
-                      {r.domain.charAt(0).toUpperCase()}
-                    </span>
-                  </span>
-                  <span className="meta">
-                    <span className="domain">{r.domain}</span>
-                    <span className="bar">
-                      <span className="fill" style={{ width: maxMs ? `${Math.max(4, (r.timeMs / maxMs) * 100)}%` : '4%' }} />
-                    </span>
-                  </span>
-                  <span className="vals">
-                    <span className="time">{fmtTime(r.timeMs)}</span>
-                    <span className="visits">{r.visits}×</span>
-                  </span>
-                </li>
+              {domains.slice(0, 5).map((r, i) => (
+                <DomainRow key={r.domain} r={r} i={i} maxMs={maxMs} />
               ))}
             </ol>
           </section>
 
-          {keywords.length > 0 && (
-            <section>
-              <div className="section-title">Themen / Suchbegriffe</div>
-              <div className="cloud">
-                {keywords.map((k) => (
-                  <span
-                    key={k.term}
-                    className="kw"
-                    style={{ fontSize: `${11 + (k.count / maxKw) * 9}px`, opacity: 0.55 + (k.count / maxKw) * 0.45 }}
-                    title={`${k.count}×`}
-                  >
-                    {k.term}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
+          <div className="navbtns">
+            <button className="navbtn" onClick={() => setView('allsites')}>
+              Alle Websites ({domains.length}) →
+            </button>
+            <button className="navbtn" onClick={() => setView('keywords')}>
+              Suchbegriffe ({keywords.length}) →
+            </button>
+          </div>
         </>
       )}
 
       <footer className="foot">
-        <button className="clear" onClick={onClear}>Daten löschen</button>
+        {confirmClear ? (
+          <span className="confirm">
+            Wirklich löschen?
+            <button className="confirm-yes" onClick={doClear}>Ja</button>
+            <button className="confirm-no" onClick={() => setConfirmClear(false)}>Nein</button>
+          </span>
+        ) : (
+          <button className="clear" onClick={() => setConfirmClear(true)}>Daten löschen</button>
+        )}
         <span className="hint">100 % lokal</span>
       </footer>
+    </div>
+  );
+}
+
+/* ---------- Unterseite: Alle Websites ----------------------------------- */
+
+function AllSites({ domains, maxMs, label, onBack }) {
+  return (
+    <div className="wrap">
+      <header className="head">
+        <button className="gear" onClick={onBack} title="Zurück">←</button>
+        <div className="brand" style={{ flex: 1, justifyContent: 'center' }}>Alle Websites</div>
+        <span style={{ width: 28 }} />
+      </header>
+      <div className="hintline" style={{ textAlign: 'center' }}>{label} · {domains.length} Domains</div>
+      {domains.length === 0 ? (
+        <div className="empty">Keine Daten.</div>
+      ) : (
+        <ol className="list scrolllist">
+          {domains.map((r, i) => (
+            <DomainRow key={r.domain} r={r} i={i} maxMs={maxMs} />
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Unterseite: Suchbegriffe (alphabetisch) --------------------- */
+
+function Keywords({ keywords, label, onBack }) {
+  const sorted = [...keywords].sort((a, b) => a.term.localeCompare(b.term, 'de'));
+  return (
+    <div className="wrap">
+      <header className="head">
+        <button className="gear" onClick={onBack} title="Zurück">←</button>
+        <div className="brand" style={{ flex: 1, justifyContent: 'center' }}>Suchbegriffe</div>
+        <span style={{ width: 28 }} />
+      </header>
+      <div className="hintline" style={{ textAlign: 'center' }}>{label} · {sorted.length} Begriffe</div>
+      {sorted.length === 0 ? (
+        <div className="empty">
+          Noch keine Suchbegriffe erfasst.<br />
+          Such mal über Google &amp; Co. — sie erscheinen hier.
+        </div>
+      ) : (
+        <div className="kwlist scrolllist">
+          {sorted.map((k) => (
+            <span key={k.term} className="kwitem">
+              <span className="kwterm">{k.term}</span>
+              <span className="kwcount">{k.count}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
