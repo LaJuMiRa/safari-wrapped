@@ -15,13 +15,10 @@ function fmtTime(ms) {
   return r ? `${h} h ${r} min` : `${h} h`;
 }
 
-function bigTime(ms) {
+function totalNumber(ms) {
   const h = ms / 3600000;
-  if (h >= 1) {
-    const num = (h < 10 ? h.toFixed(1) : String(Math.round(h))).replace('.', ',');
-    return { num, unitKey: 'w.total.hours' };
-  }
-  return { num: String(Math.max(1, Math.round(ms / 60000))), unitKey: 'w.total.minutes' };
+  if (h >= 1) return { value: h, decimals: h < 10 ? 1 : 0, unitKey: 'w.total.hours' };
+  return { value: Math.max(1, Math.round(ms / 60000)), decimals: 0, unitKey: 'w.total.minutes' };
 }
 
 function colorFor(domain) {
@@ -47,6 +44,79 @@ function Slide({ children }) {
   return <div className="slide-inner">{children}</div>;
 }
 
+/* ---------- Animations-Bausteine ---------- */
+
+// Zählt eine Zahl beim Erscheinen von 0 hoch (ease-out).
+function useCountUp(target, duration = 1000) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let raf;
+    const start = performance.now();
+    const ease = (x) => 1 - Math.pow(1 - x, 3);
+    function tick(now) {
+      const p = Math.min(1, (now - start) / duration);
+      setVal(target * ease(p));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
+function Counter({ value, decimals = 0 }) {
+  const v = useCountUp(value, 1000);
+  const shown = decimals ? v.toFixed(decimals).replace('.', ',') : String(Math.round(v));
+  return <>{shown}</>;
+}
+
+// Balken, der nach dem Mounten von 0 auf seine Zielbreite wächst.
+function GrowBar({ pct, delay = 0 }) {
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setW(pct));
+    return () => cancelAnimationFrame(id);
+  }, [pct]);
+  return (
+    <span className="tb">
+      <span style={{ width: `${w}%`, transitionDelay: `${delay}ms` }} />
+    </span>
+  );
+}
+
+function TopList({ domains }) {
+  const max = domains[0].timeMs || 1;
+  return (
+    <ol className="toplist">
+      {domains.slice(0, 5).map((r, i) => (
+        <li key={r.domain} className="toprow" style={{ animationDelay: `${i * 100}ms` }}>
+          <span className="ti">{i + 1}</span>
+          <span className="td">{r.domain}</span>
+          <GrowBar pct={Math.max(6, (r.timeMs / max) * 100)} delay={i * 100 + 150} />
+          <span className="tt">{fmtTime(r.timeMs)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function KeywordCloud({ items }) {
+  const maxK = items[0].count || 1;
+  return (
+    <div className="wcloud">
+      {items.slice(0, 22).map((it, i) => (
+        <span
+          key={it.key || it.term}
+          className="kwpop"
+          style={{ fontSize: `${18 + (it.count / maxK) * 30}px`, animationDelay: `${i * 45}ms` }}
+        >
+          {it.label || it.term}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /* ---------- Folien ---------- */
 
 function buildSlides(d, t) {
@@ -62,12 +132,12 @@ function buildSlides(d, t) {
     </Slide>
   ));
 
-  const bt = bigTime(d.totalMs);
+  const tot = totalNumber(d.totalMs);
   slides.push(() => (
     <Slide>
       <div className="kicker">{t('w.total.kicker')}</div>
-      <div className="huge">{bt.num}</div>
-      <div className="huge-unit">{t(bt.unitKey)}</div>
+      <div className="huge"><Counter value={tot.value} decimals={tot.decimals} /></div>
+      <div className="huge-unit">{t(tot.unitKey)}</div>
       <div className="sub">{t('w.total.sub', { visits: d.totalVisits })}</div>
     </Slide>
   ));
@@ -85,7 +155,7 @@ function buildSlides(d, t) {
   slides.push(() => (
     <Slide>
       <div className="kicker">{t('w.count.kicker')}</div>
-      <div className="huge">{d.domainCount}</div>
+      <div className="huge"><Counter value={d.domainCount} /></div>
       <div className="huge-unit">{t('w.count.unit')}</div>
       {d.busiestDay && (
         <div className="sub">{t('w.count.sub', { date: d.busiestDay.date, time: fmtTime(d.busiestDay.timeMs) })}</div>
@@ -107,20 +177,10 @@ function buildSlides(d, t) {
   }
 
   if (d.domains.length > 1) {
-    const max = d.domains[0].timeMs || 1;
     slides.push(() => (
       <Slide>
         <div className="kicker">{t('w.top5.kicker')}</div>
-        <ol className="toplist">
-          {d.domains.slice(0, 5).map((r, i) => (
-            <li key={r.domain}>
-              <span className="ti">{i + 1}</span>
-              <span className="td">{r.domain}</span>
-              <span className="tb"><span style={{ width: `${Math.max(6, (r.timeMs / max) * 100)}%` }} /></span>
-              <span className="tt">{fmtTime(r.timeMs)}</span>
-            </li>
-          ))}
-        </ol>
+        <TopList domains={d.domains} />
       </Slide>
     ));
   }
@@ -148,17 +208,10 @@ function buildSlides(d, t) {
   }
 
   if (d.themes.length) {
-    const maxK = d.themes[0].count || 1;
     slides.push(() => (
       <Slide>
         <div className="kicker">{t('w.themes.kicker')}</div>
-        <div className="wcloud">
-          {d.themes.slice(0, 22).map((th) => (
-            <span key={th.key} style={{ fontSize: `${18 + (th.count / maxK) * 30}px`, opacity: 0.6 + (th.count / maxK) * 0.4 }}>
-              {th.label}
-            </span>
-          ))}
-        </div>
+        <KeywordCloud items={d.themes} />
       </Slide>
     ));
   }
@@ -202,9 +255,9 @@ function buildSlides(d, t) {
     <Slide>
       <div className="kicker">{t('w.outro.kicker', { period })}</div>
       <div className="recap">
-        <div><b>{bt.num}</b><span>{t(bt.unitKey)}</span></div>
-        <div><b>{d.domainCount}</b><span>{t('w.count.unit')}</span></div>
-        <div><b>{d.keywords.length}</b><span>{t('w.outro.searches')}</span></div>
+        <div><b><Counter value={tot.value} decimals={tot.decimals} /></b><span>{t(tot.unitKey)}</span></div>
+        <div><b><Counter value={d.domainCount} /></b><span>{t('w.count.unit')}</span></div>
+        <div><b><Counter value={d.keywords.length} /></b><span>{t('w.outro.searches')}</span></div>
       </div>
       <div className="outro-actions">
         <button className="share-btn" onClick={(e) => { e.stopPropagation(); makeShareImage(d, t); }}>

@@ -104,6 +104,10 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [dir, setDir] = useState('fwd'); // Richtung des letzten Ansichtswechsels
+
+  const goTo = (v) => { setDir('fwd'); setView(v); };
+  const goBack = () => { setDir('back'); setView('main'); };
 
   const t = makeT(lang);
   const pLabel = (key) => t(`per.${key}`);
@@ -176,17 +180,17 @@ export default function App() {
   }
 
   if (view === 'settings') {
-    return <Settings t={t} lang={lang} onLang={changeLang} onBack={() => { setView('main'); load(period); }} />;
+    return <Settings t={t} lang={lang} dir={dir} onLang={changeLang} onBack={() => { setDir('back'); setView('main'); load(period); }} />;
   }
   if (view === 'allsites') {
-    return <AllSites t={t} lang={lang} domains={domains} maxMs={maxMs} label={pLabel(period)} onBack={() => setView('main')} />;
+    return <AllSites t={t} lang={lang} dir={dir} domains={domains} maxMs={maxMs} label={pLabel(period)} onBack={goBack} />;
   }
   if (view === 'keywords') {
-    return <Keywords t={t} lang={lang} keywords={keywords} label={pLabel(period)} onBack={() => setView('main')} />;
+    return <Keywords t={t} lang={lang} dir={dir} keywords={keywords} label={pLabel(period)} onBack={goBack} />;
   }
 
   return (
-    <div className="wrap">
+    <div className={`wrap view-${dir}`}>
       <header className="head">
         <div className="brand">
           <span className="dot" />
@@ -196,7 +200,7 @@ export default function App() {
           <button className={`pause ${paused ? 'on' : ''}`} onClick={togglePause}>
             {paused ? '▶' : '❚❚'}
           </button>
-          <button className="gear" title={t('settings.title')} onClick={() => setView('settings')}>⚙</button>
+          <button className="gear" title={t('settings.title')} onClick={() => goTo('settings')}>⚙</button>
         </div>
       </header>
 
@@ -273,10 +277,10 @@ export default function App() {
           </section>
 
           <div className="navbtns">
-            <button className="navbtn" onClick={() => setView('allsites')}>
+            <button className="navbtn" onClick={() => goTo('allsites')}>
               {t('nav.allsites', { n: domains.length })}
             </button>
-            <button className="navbtn" onClick={() => setView('keywords')}>
+            <button className="navbtn" onClick={() => goTo('keywords')}>
               {t('nav.keywords', { n: keywords.length })}
             </button>
           </div>
@@ -301,9 +305,9 @@ export default function App() {
 
 /* ---------- Unterseite: Alle Websites ----------------------------------- */
 
-function AllSites({ t, domains, maxMs, label, onBack }) {
+function AllSites({ t, dir, domains, maxMs, label, onBack }) {
   return (
-    <div className="wrap">
+    <div className={`wrap view-${dir}`}>
       <header className="subhead">
         <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
         <span className="subtitle">{t('page.allsites')}</span>
@@ -324,10 +328,10 @@ function AllSites({ t, domains, maxMs, label, onBack }) {
 
 /* ---------- Unterseite: Suchbegriffe (alphabetisch) --------------------- */
 
-function Keywords({ t, lang, keywords, label, onBack }) {
+function Keywords({ t, lang, dir, keywords, label, onBack }) {
   const sorted = [...keywords].sort((a, b) => a.term.localeCompare(b.term, lang));
   return (
-    <div className="wrap">
+    <div className={`wrap view-${dir}`}>
       <header className="subhead">
         <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
         <span className="subtitle">{t('page.keywords')}</span>
@@ -351,7 +355,7 @@ function Keywords({ t, lang, keywords, label, onBack }) {
 
 /* ---------- Einstellungen ------------------------------------------------ */
 
-function Settings({ t, lang, onLang, onBack }) {
+function Settings({ t, lang, dir, onLang, onBack }) {
   const [exclude, setExclude] = useState([]);
   const [retentionDays, setRetentionDays] = useState(90);
   const [input, setInput] = useState('');
@@ -382,7 +386,7 @@ function Settings({ t, lang, onLang, onBack }) {
   }
 
   return (
-    <div className="wrap">
+    <div className={`wrap view-${dir}`}>
       <header className="subhead">
         <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
         <span className="subtitle">{t('page.settings')}</span>
