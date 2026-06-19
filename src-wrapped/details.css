@@ -1,0 +1,91 @@
+/* details.css — Vollbild-Detailseite (Alle Websites / Suchbegriffe).
+   Muted, warme Palette wie das Popup; Slate-Blau als Akzent. */
+
+/* Die Story (wrapped.css) setzt global height:100% + overflow:hidden für das
+   Vollbild. Für den Detail-Modus heben wir das auf, damit die Seite scrollt. */
+html.mode-details,
+html.mode-details body,
+html.mode-details #root {
+  height: auto;
+  overflow: visible;
+}
+
+.dpage {
+  min-height: 100vh;
+  background: linear-gradient(170deg, #211d19 0%, #1a1815 70%);
+  color: #ece6dd;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dhead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(20, 18, 16, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(236, 230, 221, 0.08);
+}
+.dhead-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+}
+.dtitle { font-size: 22px; font-weight: 800; }
+.dmeta { flex: 1; font-size: 14px; color: #a89f93; }
+.dclose {
+  width: 38px; height: 38px;
+  border: 1px solid rgba(236, 230, 221, 0.16);
+  background: rgba(236, 230, 221, 0.06);
+  color: #ece6dd;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.dclose:hover { background: rgba(236, 230, 221, 0.12); }
+
+.dbody { max-width: 780px; margin: 0 auto; padding: 22px 24px 80px; }
+.dempty { text-align: center; color: #a89f93; padding: 80px 20px; font-size: 15px; line-height: 1.5; }
+
+.dlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.drow {
+  display: grid;
+  grid-template-columns: 30px 30px 1fr 160px auto;
+  align-items: center;
+  gap: 14px;
+  background: #2a2520;
+  border: 1px solid rgba(236, 230, 221, 0.07);
+  border-radius: 12px;
+  padding: 12px 18px;
+}
+.drank { font-weight: 700; color: #a89f93; text-align: center; }
+.dfav {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; font-size: 14px;
+}
+.dname { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbar { height: 6px; background: rgba(236, 230, 221, 0.1); border-radius: 999px; overflow: hidden; }
+.dbar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5a7ea8, #7196c0); }
+.dvals { text-align: right; display: flex; flex-direction: column; }
+.dvals b { font-size: 14px; }
+.dvals span { font-size: 12px; color: #a89f93; }
+
+.dkw { display: flex; flex-wrap: wrap; gap: 10px; }
+.dchip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #2a2520;
+  border: 1px solid rgba(236, 230, 221, 0.07);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 15px;
+}
+.dchip b { color: #8fb0d4; font-size: 13px; }
+
+@media (max-width: 560px) {
+  .drow { grid-template-columns: 26px 26px 1fr auto; }
+  .dbar { display: none; }
+}

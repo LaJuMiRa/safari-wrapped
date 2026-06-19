@@ -68,6 +68,16 @@ function openWrapped(period) {
   } catch { /* noop */ }
 }
 
+// Detail-Listen (Alle Websites / Suchbegriffe) als Vollbild-Seite im neuen Tab –
+// umgeht zuverlässig die Höhenbeschränkung des Popups.
+function openDetails(period, mode) {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.runtime) {
+      chrome.tabs.create({ url: chrome.runtime.getURL(`wrapped/index.html?mode=${mode}&period=${period}`) });
+    }
+  } catch { /* noop */ }
+}
+
 /* ---------- Wiederverwendbare Zeile ------------------------------------- */
 
 function DomainRow({ r, i, maxMs }) {
@@ -158,13 +168,6 @@ export default function App() {
   }, []);
 
   useEffect(() => { load(period); }, [period, load]);
-
-  // Auf den Listen-Unterseiten das Popup auf feste Höhe sperren (nur Liste scrollt).
-  useEffect(() => {
-    const locked = view === 'allsites' || view === 'keywords';
-    document.body.classList.toggle('locked', locked);
-    return () => document.body.classList.remove('locked');
-  }, [view]);
 
   const totalMs = domains.reduce((s, r) => s + r.timeMs, 0);
   const totalVisits = domains.reduce((s, r) => s + r.visits, 0);
@@ -292,11 +295,11 @@ export default function App() {
           </section>
 
           <div className="navbtns">
-            <button className="navrow" onClick={() => goTo('allsites')}>
+            <button className="navrow" onClick={() => openDetails(period, 'allsites')}>
               <span>{t('nav.allsites', { n: domains.length })}</span>
               <Icon name="chevronRight" size={18} />
             </button>
-            <button className="navrow" onClick={() => goTo('keywords')}>
+            <button className="navrow" onClick={() => openDetails(period, 'keywords')}>
               <span>{t('nav.keywords', { n: keywords.length })}</span>
               <Icon name="chevronRight" size={18} />
             </button>
