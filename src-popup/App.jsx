@@ -4,6 +4,7 @@ import {
 } from '../extension/db.js';
 import { CATEGORIES, categoryFor } from './categories.js';
 import { makeT, getLang, LANGS } from './i18n.js';
+import Icon from './Icon.jsx';
 
 /* ---------- Helfer ------------------------------------------------------- */
 
@@ -158,6 +159,13 @@ export default function App() {
 
   useEffect(() => { load(period); }, [period, load]);
 
+  // Auf den Listen-Unterseiten das Popup auf feste Höhe sperren (nur Liste scrollt).
+  useEffect(() => {
+    const locked = view === 'allsites' || view === 'keywords';
+    document.body.classList.toggle('locked', locked);
+    return () => document.body.classList.remove('locked');
+  }, [view]);
+
   const totalMs = domains.reduce((s, r) => s + r.timeMs, 0);
   const totalVisits = domains.reduce((s, r) => s + r.visits, 0);
   const maxMs = domains.length ? domains[0].timeMs : 0;
@@ -197,10 +205,17 @@ export default function App() {
           Browsing&nbsp;Wrapped
         </div>
         <div className="head-actions">
-          <button className={`pause ${paused ? 'on' : ''}`} onClick={togglePause}>
-            {paused ? '▶' : '❚❚'}
+          <button
+            className={`iconbtn ${paused ? 'active' : ''}`}
+            title={t('banner.paused')}
+            aria-label={t('banner.paused')}
+            onClick={togglePause}
+          >
+            <Icon name={paused ? 'play' : 'pause'} size={16} />
           </button>
-          <button className="gear" title={t('settings.title')} onClick={() => goTo('settings')}>⚙</button>
+          <button className="iconbtn" title={t('settings.title')} aria-label={t('settings.title')} onClick={() => goTo('settings')}>
+            <Icon name="settings" size={17} />
+          </button>
         </div>
       </header>
 
@@ -217,7 +232,7 @@ export default function App() {
       </div>
 
       <div className="summary">
-        <div className="stat">
+        <div className="stat stat-primary">
           <div className="num">{fmtTime(totalMs)}</div>
           <div className="lbl">{t('sum.active')}</div>
         </div>
@@ -277,11 +292,13 @@ export default function App() {
           </section>
 
           <div className="navbtns">
-            <button className="navbtn" onClick={() => goTo('allsites')}>
-              {t('nav.allsites', { n: domains.length })}
+            <button className="navrow" onClick={() => goTo('allsites')}>
+              <span>{t('nav.allsites', { n: domains.length })}</span>
+              <Icon name="chevronRight" size={18} />
             </button>
-            <button className="navbtn" onClick={() => goTo('keywords')}>
-              {t('nav.keywords', { n: keywords.length })}
+            <button className="navrow" onClick={() => goTo('keywords')}>
+              <span>{t('nav.keywords', { n: keywords.length })}</span>
+              <Icon name="chevronRight" size={18} />
             </button>
           </div>
         </>
@@ -295,9 +312,11 @@ export default function App() {
             <button className="confirm-no" onClick={() => setConfirmClear(false)}>{t('common.no')}</button>
           </span>
         ) : (
-          <button className="clear" onClick={() => setConfirmClear(true)}>{t('clear.btn')}</button>
+          <button className="clear" onClick={() => setConfirmClear(true)}>
+            <Icon name="trash" size={14} /> {t('clear.btn')}
+          </button>
         )}
-        <span className="hint">{t('hint.local')}</span>
+        <span className="badge"><Icon name="lock" size={12} /> {t('hint.local')}</span>
       </footer>
     </div>
   );
@@ -307,9 +326,9 @@ export default function App() {
 
 function AllSites({ t, dir, domains, maxMs, label, onBack }) {
   return (
-    <div className={`wrap view-${dir}`}>
+    <div className={`wrap subview view-${dir}`}>
       <header className="subhead">
-        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
+        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück"><Icon name="chevronLeft" size={20} /></button>
         <span className="subtitle">{t('page.allsites')}</span>
       </header>
       <div className="hintline" style={{ textAlign: 'center' }}>{t('allsites.count', { label, n: domains.length })}</div>
@@ -331,9 +350,9 @@ function AllSites({ t, dir, domains, maxMs, label, onBack }) {
 function Keywords({ t, lang, dir, keywords, label, onBack }) {
   const sorted = [...keywords].sort((a, b) => a.term.localeCompare(b.term, lang));
   return (
-    <div className={`wrap view-${dir}`}>
+    <div className={`wrap subview view-${dir}`}>
       <header className="subhead">
-        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
+        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück"><Icon name="chevronLeft" size={20} /></button>
         <span className="subtitle">{t('page.keywords')}</span>
       </header>
       <div className="hintline" style={{ textAlign: 'center' }}>{t('keywords.count', { label, n: sorted.length })}</div>
@@ -388,7 +407,7 @@ function Settings({ t, lang, dir, onLang, onBack }) {
   return (
     <div className={`wrap view-${dir}`}>
       <header className="subhead">
-        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück">‹</button>
+        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück"><Icon name="chevronLeft" size={20} /></button>
         <span className="subtitle">{t('page.settings')}</span>
       </header>
 
@@ -418,7 +437,7 @@ function Settings({ t, lang, dir, onLang, onBack }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') addExclude(); }}
           />
-          <button className="addbtn" onClick={addExclude}>+</button>
+          <button className="addbtn" onClick={addExclude} aria-label="+"><Icon name="plus" size={18} /></button>
         </div>
         {exclude.length === 0 ? (
           <div className="hintline">{t('set.exclude.empty')}</div>
@@ -427,7 +446,7 @@ function Settings({ t, lang, dir, onLang, onBack }) {
             {exclude.map((d) => (
               <li key={d} className="tag">
                 {d}
-                <button className="tagx" onClick={() => removeExclude(d)}>×</button>
+                <button className="tagx" onClick={() => removeExclude(d)} aria-label="×"><Icon name="x" size={12} /></button>
               </li>
             ))}
           </ul>

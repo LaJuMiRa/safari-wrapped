@@ -1,20 +1,21 @@
 // categories.js — grobe Domain→Kategorie-Zuordnung (rein lokal, kein Lookup).
 // Wird nur zur Anzeige im Popup genutzt. Erweiterbar: einfach Regeln ergänzen.
 
+// Muted, warm abgestimmte Kategorie-Farben (zur dezenten Palette passend).
 export const CATEGORIES = {
-  dev:          { label: 'Entwicklung',   color: '#3b82f6' },
-  ai:           { label: 'KI',            color: '#7b5cff' },
-  social:       { label: 'Social',        color: '#ec4899' },
-  video:        { label: 'Video',         color: '#ef4444' },
-  news:         { label: 'News',          color: '#f59e0b' },
-  shopping:     { label: 'Shopping',      color: '#10b981' },
-  productivity: { label: 'Produktivität', color: '#8b5cf6' },
-  reference:    { label: 'Wissen',        color: '#14b8a6' },
-  finance:      { label: 'Finanzen',      color: '#22c55e' },
-  email:        { label: 'E-Mail',        color: '#0ea5e9' },
-  music:        { label: 'Musik',         color: '#a855f7' },
-  search:       { label: 'Suche',         color: '#64748b' },
-  other:        { label: 'Sonstiges',     color: '#6b7280' },
+  dev:          { label: 'Entwicklung',   color: '#6f93b0' },
+  ai:           { label: 'KI',            color: '#9d8bb3' },
+  social:       { label: 'Social',        color: '#c2849c' },
+  video:        { label: 'Video',         color: '#c47a6e' },
+  news:         { label: 'News',          color: '#c9a36b' },
+  shopping:     { label: 'Shopping',      color: '#7faa8e' },
+  productivity: { label: 'Produktivität', color: '#9a8fb5' },
+  reference:    { label: 'Wissen',        color: '#6faaa0' },
+  finance:      { label: 'Finanzen',      color: '#86a982' },
+  email:        { label: 'E-Mail',        color: '#7ba0b3' },
+  music:        { label: 'Musik',         color: '#a98ab0' },
+  search:       { label: 'Suche',         color: '#8d8a86' },
+  other:        { label: 'Sonstiges',     color: '#8a8279' },
 };
 
 // Reihenfolge zählt: erste passende Regel gewinnt.
