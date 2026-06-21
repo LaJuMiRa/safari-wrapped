@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Browsing Wrapped — lokale Safari-Extension für Spotify-Wrapped-artige Browsing-Rückblicke.",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
     "build": "vite build && vite build -c vite.wrapped.config.js"

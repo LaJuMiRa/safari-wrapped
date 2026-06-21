@@ -1,66 +1,131 @@
-# safari-rapped — Browsing Wrapped
+<div align="center">
 
-Eine **rein lokale** Safari-Extension, die deinen Browser-Verlauf trackt und dir
-einen Spotify-Wrapped-artigen Rückblick (Tag/Woche/Monat/Jahr) gibt: meistbesuchte
-Websites, Verweildauer und – ab Phase 2 – deine häufigsten Themen & Suchanfragen.
+# Browsing Wrapped
 
-Alle Daten bleiben auf deinem Gerät (IndexedDB). Kein Server, kein Account, kein Sync.
+**Your year on the web — like Spotify Wrapped, but for your browsing. 100% local.**
 
-> **Status: Phase 4 (Feinschliff).** Tracking (Domains, Besuche, Verweildauer,
-> Suchbegriffe) + **animierte Wrapped-Story** (Vollbild-Tab, Folien für
-> Woche/Monat/Jahr): Gesamtzeit, Zeit-Vergleich, Top-5, Lieblingsseite,
-> Browsing-Typ, aktivster Wochentag, **gruppierte Themen** (lokaler DE/EN-Stemmer),
-> Trends ggü. Vorperiode, Kategorien, Outro mit Konfetti und „Als Bild speichern"
-> (lokales PNG). Suchbegriffe werden für die Themen-Folien lokal zu Wortstämmen
-> gebündelt (`src-popup/themes.js`). Konzept: `Konzept_Browsing_Wrapped.md`.
+A Safari extension that tracks your browsing and turns it into a beautiful,
+animated recap. Top sites, time spent, recurring themes — all computed on your
+device. Nothing ever leaves your Mac.
 
----
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Safari-lightgrey.svg)](#requirements)
+[![Privacy](https://img.shields.io/badge/data-100%25%20local-success.svg)](#privacy)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-## Projektstruktur
+</div>
 
-```
-safari-rapped/
-├── extension/              ← die ladefertige Web-Extension (Input für Xcode)
-│   ├── manifest.json       ← MV3-Manifest
-│   ├── background.js       ← Service Worker: Tracking-Logik
-│   ├── tracker.js          ← Verweildauer-State-Machine
-│   ├── db.js               ← IndexedDB-Layer (geteilt mit dem Popup)
-│   ├── icons/              ← App-Icons (16/48/128)
-│   └── popup/              ← vom Build erzeugt (NICHT von Hand bearbeiten)
-├── src-popup/              ← React-Quellcode des Popups
-│   ├── index.html
-│   ├── main.jsx
-│   ├── App.jsx
-│   └── styles.css
-├── package.json
-├── vite.config.js
-└── Konzept_Browsing_Wrapped.md
-```
-
-Die Trennung ist bewusst: `background.js`, `tracker.js`, `db.js` sind reines
-Vanilla-JS (kein Build nötig). Nur das **Popup** wird mit React + Vite gebaut und
-landet als statische Dateien in `extension/popup/`.
+> **Heads up:** add a screenshot or GIF here once you have one — e.g.
+> `docs/screenshot-popup.png` and `docs/wrapped-story.gif`. A visual at the top
+> is the single biggest win for a project README.
 
 ---
 
-## 1. Popup bauen
+## Table of Contents
 
-Einmalig Abhängigkeiten installieren, dann bauen:
+- [Why](#why)
+- [Features](#features)
+- [Privacy](#privacy)
+- [Installation](#installation)
+- [How it works](#how-it-works)
+- [Development](#development)
+- [Project structure](#project-structure)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Why
+
+Most "year in review" features ship your data to a server. Browsing Wrapped does
+the opposite: it computes everything locally in the browser using IndexedDB, so
+you get the fun recap **without** handing your history to anyone — including the
+author. No account, no server, no sync, no telemetry.
+
+## Features
+
+- **Real dwell-time tracking** — measures actual attention time per domain (only
+  while the tab is active, the window is focused, and you're not idle).
+- **Top sites** per period (Today / Week / Month) with visit counts and time.
+- **Themes & search terms** — search queries are split into individual keywords
+  locally (stop-words removed) and grouped into themes with a lightweight DE/EN stemmer.
+- **Categories** — domains are classified locally (Dev, AI, News, Shopping …).
+- **Animated Wrapped story** — full-screen, swipeable slides (Week/Month/Year) with
+  count-up numbers, your "browsing type", busiest weekday, trend vs. the previous
+  period, confetti, and a locally generated shareable image.
+- **Detail pages** for all sites / all search terms, in their own scrollable tab.
+- **Bilingual** (English / German), switchable in settings.
+- **Full control** — pause tracking, exclusion list (e.g. banking), data retention,
+  and one-click delete.
+
+## Privacy
+
+- Only **domains** are stored — never full URLs.
+- From searches, only **individual keywords** are stored — never the full query.
+- Private windows and excluded domains are ignored.
+- **No network requests carry your data.** The popup and the Wrapped story render
+  entirely offline (domain tiles are generated locally, no favicon fetches).
+
+## Installation
+
+### Requirements
+
+macOS with Safari. For building from source: Xcode and Node.js 18+.
+
+### Option A — Homebrew (prebuilt app)
+
+```bash
+brew install --cask <YOUR-GITHUB-USERNAME>/browsing-wrapped/browsing-wrapped
+```
+
+Requires a published release (see [`PUBLISH.md`](PUBLISH.md)). The app is unsigned,
+so on first launch right-click it in Finder → **Open** (or allow it under
+*System Settings → Privacy & Security*), then enable the extension in
+*Safari → Settings → Extensions*.
+
+### Option B — Build from source
+
+```bash
+git clone https://github.com/<YOUR-GITHUB-USERNAME>/safari-rapped.git
+cd safari-rapped
+npm install
+npm run build
+xcrun safari-web-extension-converter ./extension \
+  --app-name "Browsing Wrapped" \
+  --bundle-identifier com.laurenz.browsingwrapped \
+  --macos-only --no-open
+```
+
+Open the generated Xcode project, press **▶ Run**, then enable the extension in
+Safari (see [Development](#development) for the full flow).
+
+## How it works
+
+The extension has three runtime pieces, all running locally:
+
+1. **Background service worker** (`extension/background.js`) — listens to tab,
+   navigation, focus and idle events; counts visits; runs the dwell-time clock;
+   parses search-engine URLs into keywords; and writes everything to IndexedDB.
+2. **Popup** (`src-popup/`) — the toolbar UI: period switcher, top sites,
+   categories, settings. Built with React + Vite.
+3. **Wrapped page** (`src-wrapped/`) — the full-screen animated story and the
+   detail list pages, opened in their own tab.
+
+Data lives in IndexedDB (version 2):
+
+| Store        | Contents                                              |
+| ------------ | ----------------------------------------------------- |
+| `dailyStats` | Per-day, per-domain aggregates (visits, time) — kept  |
+| `keywords`   | Per-day search-keyword frequencies — kept             |
+| `events`     | Raw events, rolling window (retention configurable)   |
+
+## Development
 
 ```bash
 npm install
-npm run build      # baut src-popup/ → extension/popup/
+npm run build      # builds src-popup → extension/popup and src-wrapped → extension/wrapped
 ```
 
-Beim Weiterentwickeln des Popups praktisch: `npm run dev` (Vite-Devserver im Browser,
-ohne Extension-Kontext — gut fürs Layout, ohne echte Daten).
-
-Nach jeder Popup-Änderung erneut `npm run build`, danach in Safari die Extension neu laden.
-
-## 2. In eine Safari-App verpacken
-
-Safari-Extensions brauchen einen nativen App-Container. Apple liefert ein
-Konverter-Tool, das aus dem `extension/`-Ordner ein fertiges Xcode-Projekt macht:
+Package it into a Safari app (once per fresh clone):
 
 ```bash
 xcrun safari-web-extension-converter ./extension \
@@ -69,53 +134,52 @@ xcrun safari-web-extension-converter ./extension \
   --macos-only --no-open
 ```
 
-Das erzeugt ein Xcode-Projekt (Ordner „Browsing Wrapped"). Öffne es in Xcode.
+Then in Xcode press **▶ Run**, and in Safari:
 
-## 3. Bauen & lokal laden
+1. *Settings → Extensions* → enable **Browsing Wrapped**.
+2. If it doesn't appear, enable **Develop → Allow Unsigned Extensions** (turn on the
+   Develop menu via *Settings → Advanced → Show features for web developers*).
+3. On first click, grant website access ("Allow on Every Website").
 
-1. In Xcode oben das App-Target wählen und auf **▶ Run** drücken. Die kleine
-   Container-App startet — sie öffnet nur einen Hinweis „Aktiviere die Extension in Safari".
-2. In Safari → **Einstellungen → Erweiterungen** → „Browsing Wrapped" aktivieren.
-3. Falls die Extension nicht erscheint, zuerst **unsignierte Erweiterungen erlauben**:
-   Safari → Menü **Entwickeln → „Unsignierte Erweiterungen zulassen"**
-   (Das Entwickeln-Menü ggf. unter Einstellungen → Erweitert → „Funktionen für
-   Webentwickler anzeigen" aktivieren.)
-4. Beim ersten Klick aufs Toolbar-Icon fragt Safari nach Zugriff auf Websites —
-   das ist nötig, damit Domains erfasst werden können. „Für alle Websites erlauben".
+The converter references the files relatively (`../../extension/...`), so after
+`npm run build` you only need **Product → Clean Build Folder** (⇧⌘K) → **Run**.
 
-> Tipp: Nach Code-Änderungen an `extension/` reicht in Safari oft ein Neuladen der
-> Extension. Bei Änderungen am Manifest oder neuen Dateien lieber in Xcode neu bauen.
+## Project structure
 
----
+```
+safari-rapped/
+├── extension/              # loadable web extension (input for Xcode)
+│   ├── manifest.json       # MV3 manifest
+│   ├── background.js       # service worker: tracking logic (self-contained)
+│   ├── db.js               # IndexedDB layer (shared with popup & story)
+│   ├── icons/              # app icons (16/48/128)
+│   ├── popup/              # build output — do not edit by hand
+│   └── wrapped/            # build output — story + detail pages
+├── src-popup/              # React source for the popup (tokens.css, i18n.js, …)
+├── src-wrapped/            # React source for the Wrapped story & detail pages
+├── vite.config.js          # popup build
+├── vite.wrapped.config.js  # wrapped-page build
+└── package.json            # `npm run build` builds both
+```
 
-## Was Phase 1 schon kann
+## Roadmap
 
-- Zählt **Besuche pro Domain** (jede Top-Level-Navigation).
-- Misst **echte Verweildauer** — die Uhr läuft nur, wenn der Tab aktiv, das Fenster
-  im Vordergrund und du nicht idle bist (60 s Idle-Schwelle).
-- Speichert alles **lokal** in IndexedDB, verdichtet zu Tages-Aggregaten,
-  prunt rohe Ereignisse nach 90 Tagen.
-- **Popup** zeigt die heutige Top-10 mit Zeit/Besuchen, Gesamt­statistik,
-  Pause-Schalter und „Daten löschen".
+- [ ] App-Store / signed-app distribution
+- [ ] Data export / import (JSON backup)
+- [ ] Optional on-device theme clustering
+- [ ] More search engines and category rules
 
-## Datenschutz-Eckpfeiler
+## Contributing
 
-- Nur **Domains** werden gespeichert, keine vollständigen URLs.
-- Private Fenster und Domains auf der Ausschlussliste werden ignoriert.
-- Keine Netzwerk-Requests mit deinen Daten — auch das Popup rendert komplett offline
-  (Domain-Kacheln werden lokal aus dem Namen erzeugt, keine Favicon-Abrufe).
+Contributions are welcome — bug fixes, new categories or search engines,
+translations, features. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) first.
+The one hard rule: **no feature may let data leave the device.**
 
-## Datenmodell (IndexedDB, Version 2)
+## License
 
-- `dailyStats` — Tages-Aggregate pro Domain (Besuche, Zeit), dauerhaft.
-- `keywords` — Tages-Häufigkeiten einzelner Suchbegriffe, dauerhaft.
-- `events` — rohe Einzel-Ereignisse, rollierend (Aufbewahrung einstellbar).
+[GNU GPL v3](LICENSE) © 2026 Laurenz Rauscher
 
-Suchbegriffe werden in Einzel-Keywords zerlegt, Stoppwörter entfernt; es wird
-nie die ganze Suchanfrage gespeichert. Kategorien (`src-popup/categories.js`)
-werden nur zur Anzeige aus der Domain abgeleitet.
-
-## Nächste Schritte (laut Konzept)
-
-- **Phase 3:** animierte Wrapped-Story für Woche/Monat/Jahr inkl. Trend-Vergleich
-  (welche Themen neu dazukamen oder stark wuchsen) und Teilen-Bild.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the **GNU General Public License v3.0** (or, at your option, any
+later version). It is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY. See the [LICENSE](LICENSE) file for the full text.
