@@ -18,12 +18,12 @@
 		B09AA8F02FE487D900114959 /* Browsing Wrapped Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B09AA8EF2FE487D900114959 /* Browsing Wrapped Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B09AA8F52FE487D900114959 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B09AA8F42FE487D900114959 /* SafariWebExtensionHandler.swift */; };
 		B09AA9072FE487DA00114959 /* popup in Resources */ = {isa = PBXBuildFile; fileRef = B09AA9012FE487DA00114959 /* popup */; };
-		B09AAFFF2FE487DA00114901 /* wrapped in Resources */ = {isa = PBXBuildFile; fileRef = B09AAFFF2FE487DA00114902 /* wrapped */; };
 		B09AA9082FE487DA00114959 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = B09AA9022FE487DA00114959 /* background.js */; };
 		B09AA9092FE487DA00114959 /* db.js in Resources */ = {isa = PBXBuildFile; fileRef = B09AA9032FE487DA00114959 /* db.js */; };
 		B09AA90A2FE487DA00114959 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B09AA9042FE487DA00114959 /* icons */; };
 		B09AA90B2FE487DA00114959 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B09AA9052FE487DA00114959 /* manifest.json */; };
 		B09AA90C2FE487DA00114959 /* tracker.js in Resources */ = {isa = PBXBuildFile; fileRef = B09AA9062FE487DA00114959 /* tracker.js */; };
+		B09AAFFF2FE487DA00114901 /* wrapped in Resources */ = {isa = PBXBuildFile; fileRef = B09AAFFF2FE487DA00114902 /* wrapped */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,12 +65,12 @@
 		B09AA8F42FE487D900114959 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		B09AA8F62FE487D900114959 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B09AA9012FE487DA00114959 /* popup */ = {isa = PBXFileReference; lastKnownFileType = folder; name = popup; path = ../../extension/popup; sourceTree = "<group>"; };
-		B09AAFFF2FE487DA00114902 /* wrapped */ = {isa = PBXFileReference; lastKnownFileType = folder; name = wrapped; path = ../../extension/wrapped; sourceTree = "<group>"; };
 		B09AA9022FE487DA00114959 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../extension/background.js; sourceTree = "<group>"; };
 		B09AA9032FE487DA00114959 /* db.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = db.js; path = ../../extension/db.js; sourceTree = "<group>"; };
 		B09AA9042FE487DA00114959 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = ../../extension/icons; sourceTree = "<group>"; };
 		B09AA9052FE487DA00114959 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../extension/manifest.json; sourceTree = "<group>"; };
 		B09AA9062FE487DA00114959 /* tracker.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = tracker.js; path = ../../extension/tracker.js; sourceTree = "<group>"; };
+		B09AAFFF2FE487DA00114902 /* wrapped */ = {isa = PBXFileReference; lastKnownFileType = folder; name = wrapped; path = ../../extension/wrapped; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

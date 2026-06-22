@@ -26,4 +26,4 @@ First public release.
 - No full URLs, no full search queries, no network requests carrying user data.
   Everything stays local.
 
-[1.0.0]: https://github.com/LaJuMiRa/safari-rapped/releases/tag/v1.0.0
+[1.0.0]: https://github.com/LaJuMiRa/safari-wrapped/releases/tag/v1.0.0

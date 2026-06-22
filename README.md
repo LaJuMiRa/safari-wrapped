@@ -52,7 +52,7 @@ macOS with Safari and Homebrew to install.
 ### Homebrew
 
 ```bash
-brew tap LaJuMiRa/safari-rapped https://github.com/LaJuMiRa/safari-rapped
+brew tap LaJuMiRa/safari-wrapped https://github.com/LaJuMiRa/safari-wrapped
 brew install --cask browsing-wrapped
 ```
 
@@ -115,7 +115,7 @@ The converter references the files relatively (`../../extension/...`), so after
 ## Project structure
 
 ```
-safari-rapped/
+safari-wrapped/
 ├── extension/              # loadable web extension (input for Xcode)
 │   ├── manifest.json       # MV3 manifest
 │   ├── background.js       # service worker: tracking logic (self-contained)

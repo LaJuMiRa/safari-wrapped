@@ -1,8 +1,8 @@
 cask "browsing-wrapped" do
   version "1.0.0"
-  sha256 "REPLACE_WITH_SHA256" # after the release, compute with `shasum -a 256 <zip>`
+  sha256 "329cb4f243629d634757546974e2af4b25860a47656a28f6ec93a31e0819bb34"
 
-  url "https://github.com/LaJuMiRa/safari-rapped/releases/download/v#{version}/Browsing-Wrapped-#{version}.zip"
+  url "https://github.com/LaJuMiRa/safari-wrapped/releases/download/v#{version}/Browsing-Wrapped-#{version}.zip"
   name "Browsing Wrapped"
   desc "Local-only Safari extension for browsing recaps"
   homepage "https://github.com/LaJuMiRa/safari-wrapped"
