@@ -1,5 +1,5 @@
-// share.js — erzeugt lokal (Canvas) eine teilbare PNG-Zusammenfassung.
-// Kein Upload, kein Netzwerk: das Bild wird nur als Datei heruntergeladen.
+// share.js — generates a shareable PNG summary locally (canvas).
+// No upload, no network: the image is only downloaded as a file.
 
 function fmtTime(ms) {
   const m = Math.round(ms / 60000);

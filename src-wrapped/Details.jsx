@@ -1,6 +1,6 @@
-// Details.jsx — Vollbild-Seite (neuer Tab) für „Alle Websites" / „Suchbegriffe".
-// Umgeht die Höhenbeschränkung des Safari-Popovers: hier funktioniert eine
-// fixe Kopfzeile + scrollender Body ganz normal.
+// Details.jsx — full-screen page (new tab) for "All sites" / "Search terms".
+// Works around the height limit of the Safari popover: here a fixed header +
+// scrolling body works just fine.
 
 import { useEffect, useState } from 'react';
 import { getRange, getKeywordsRange, todayStr } from '../extension/db.js';

@@ -1,5 +1,5 @@
-// Icon.jsx — einheitlicher Inline-SVG-Icon-Satz.
-// Linien-Icons nutzen currentColor (über CSS einfärbbar), 24er-Raster.
+// Icon.jsx — unified inline-SVG icon set.
+// Line icons use currentColor (colorable via CSS), on a 24px grid.
 
 const PATHS = {
   settings: (
@@ -27,7 +27,7 @@ const PATHS = {
   ),
 };
 
-// Gefüllte Icons (eigene Behandlung)
+// Filled icons (handled separately)
 function Filled({ name, size }) {
   if (name === 'pause') {
     return (

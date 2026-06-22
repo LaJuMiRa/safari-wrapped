@@ -1,11 +1,11 @@
-// db.js — lokale Datenhaltung über IndexedDB.
-// Wird sowohl vom Background-Service-Worker als auch vom Popup genutzt
-// (beide teilen sich dieselbe Datenbank, da gleiche Extension-Origin).
+// db.js — local data storage via IndexedDB.
+// Used by both the background service worker and the popup
+// (they share the same database since they have the same extension origin).
 //
-// Zwei Stores:
-//   dailyStats  — Tages-Aggregate pro Domain (dauerhaft, sehr klein)
+// Two stores:
+//   dailyStats  — daily aggregates per domain (permanent, very small)
 //                 keyPath [date, domain] -> { date, domain, visits, timeMs, updatedAt }
-//   events      — rohe Einzel-Ereignisse (rollierend ~90 Tage, danach geprunt)
+//   events      — raw single events (rolling ~90 days, then pruned)
 //                 keyPath id (auto) -> { id, ts, domain, type, durationMs }
 
 const DB_NAME = 'browsing-wrapped';
@@ -53,7 +53,7 @@ function txDone(tx) {
   });
 }
 
-// Erhöht (oder legt an) ein Tages-Aggregat. delta = { visits?, ms? }
+// Increments (or creates) a daily aggregate. delta = { visits?, ms? }
 export async function bumpDaily(date, domain, delta = {}) {
   const { visits = 0, ms = 0 } = delta;
   const db = await openDB();
@@ -77,21 +77,21 @@ export async function addEvent(ev) {
   return txDone(tx);
 }
 
-// Alle Tages-Aggregate eines Tages.
+// All daily aggregates for a single day.
 export async function getDaily(date) {
   const db = await openDB();
   const idx = db.transaction('dailyStats', 'readonly').objectStore('dailyStats').index('date');
   return reqProm(idx.getAll(IDBKeyRange.only(date)));
 }
 
-// Alle Tages-Aggregate in [start, end] (inkl., Format YYYY-MM-DD).
+// All daily aggregates in [start, end] (inclusive, format YYYY-MM-DD).
 export async function getRange(start, end) {
   const db = await openDB();
   const idx = db.transaction('dailyStats', 'readonly').objectStore('dailyStats').index('date');
   return reqProm(idx.getAll(IDBKeyRange.bound(start, end)));
 }
 
-// Keyword-Häufigkeiten eines Tages bzw. eines Zeitraums (Format YYYY-MM-DD).
+// Keyword frequencies for a single day or a date range (format YYYY-MM-DD).
 export async function getKeywords(date) {
   const db = await openDB();
   const idx = db.transaction('keywords', 'readonly').objectStore('keywords').index('date');
@@ -104,15 +104,15 @@ export async function getKeywordsRange(start, end) {
   return reqProm(idx.getAll(IDBKeyRange.bound(start, end)));
 }
 
-// Rohe Ereignisse im Zeitfenster [startTs, endTs] (ms-Epoch) – für die
-// Stundenverteilung in der Wrapped-Story.
+// Raw events within [startTs, endTs] (ms epoch) — used for the hourly
+// distribution in the Wrapped story.
 export async function getEventsBetween(startTs, endTs) {
   const db = await openDB();
   const idx = db.transaction('events', 'readonly').objectStore('events').index('ts');
   return reqProm(idx.getAll(IDBKeyRange.bound(startTs, endTs)));
 }
 
-// Löscht rohe Ereignisse älter als cutoffTs (ms-Epoch).
+// Deletes raw events older than cutoffTs (ms epoch).
 export async function pruneEvents(cutoffTs) {
   const db = await openDB();
   const tx = db.transaction('events', 'readwrite');
@@ -133,7 +133,7 @@ export async function clearAll() {
   return txDone(tx);
 }
 
-// Lokales Datum als YYYY-MM-DD (nicht UTC — Wrapped soll deinen Tagen folgen).
+// Local date as YYYY-MM-DD (not UTC — Wrapped should follow your local days).
 export function todayStr(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');

@@ -7,7 +7,7 @@ import './details.css';
 
 const mode = new URLSearchParams(location.search).get('mode');
 const isDetails = mode === 'allsites' || mode === 'keywords';
-// Detail-Seite muss scrollen; die Story setzt global overflow:hidden. Marker setzen.
+// The detail page must scroll; the story sets overflow:hidden globally. Set a marker.
 if (isDetails) document.documentElement.classList.add('mode-details');
 const Page = isDetails ? Details : Wrapped;
 

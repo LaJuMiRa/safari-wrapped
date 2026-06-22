@@ -1,8 +1,8 @@
-/* details.css — Vollbild-Detailseite (Alle Websites / Suchbegriffe).
-   Muted, warme Palette wie das Popup; Slate-Blau als Akzent. */
+/* details.css — full-screen detail page (All sites / Search terms).
+   Muted, warm palette like the popup; slate blue as the accent. */
 
-/* Die Story (wrapped.css) setzt global height:100% + overflow:hidden für das
-   Vollbild. Für den Detail-Modus heben wir das auf, damit die Seite scrollt. */
+/* The story (wrapped.css) sets height:100% + overflow:hidden globally for the
+   full-screen view. For detail mode we undo that so the page can scroll. */
 html.mode-details,
 html.mode-details body,
 html.mode-details #root {

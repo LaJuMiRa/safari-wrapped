@@ -1,34 +1,35 @@
-// tracker.js — Verweildauer-State-Machine.
-// Hält nur fest, WIE LANGE die gerade aktive Domain im Vordergrund ist.
-// Die Entscheidung, WELCHE Domain aktiv ist (oder ob gerade gar keine,
-// z.B. weil pausiert/idle/Fenster im Hintergrund), trifft background.js.
+// tracker.js — dwell-time state machine.
+// Only tracks HOW LONG the currently active domain is in the foreground.
+// The decision of WHICH domain is active (or whether none is, e.g. because
+// tracking is paused / idle / the window is in the background) is made by
+// background.js.
 
 import { bumpDaily, todayStr } from './db.js';
 
-// current = { domain, since } oder null
+// current = { domain, since } or null
 let current = null;
 
-// Schreibt die seit dem letzten Checkpoint angelaufene Zeit gut und
-// setzt die Uhr zurück (current läuft danach weiter).
+// Credits the time accrued since the last checkpoint and resets the clock
+// (current keeps running afterwards).
 async function accrue() {
   if (!current) return;
   const now = Date.now();
   const ms = now - current.since;
   const domain = current.domain;
   current.since = now;
-  // Plausibilitätsgrenze: einzelne Gutschriften nie > 12h (z.B. nach SW-Schlaf).
+  // Sanity cap: a single credit is never > 12h (e.g. after the SW slept).
   if (ms > 0 && ms < 12 * 60 * 60 * 1000) {
     await bumpDaily(todayStr(), domain, { ms });
   }
 }
 
-// Periodischer Checkpoint (per Alarm): Zeit sichern, ohne current zu beenden.
+// Periodic checkpoint (via alarm): persist time without ending the segment.
 export async function checkpoint() {
   await accrue();
 }
 
-// Aktive Domain setzen (oder null = niemand zählt).
-// Bucht zuerst die bisher gelaufene Zeit, startet dann ggf. neu.
+// Set the active domain (or null = nobody is counted).
+// Credits the time accrued so far first, then starts a new segment if needed.
 export async function setActive(domain) {
   await accrue();
   current = domain ? { domain, since: Date.now() } : null;

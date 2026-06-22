@@ -1,4 +1,4 @@
-/* styles.css — Popup. Token-basiert (siehe tokens.css). */
+/* styles.css — popup. Token-based (see tokens.css). */
 
 * { box-sizing: border-box; }
 
@@ -25,13 +25,13 @@ select:focus-visible { outline: none; box-shadow: var(--focus); }
 
 .wrap { padding: var(--sp-4) var(--sp-4) var(--sp-3); }
 
-/* ---- Ansichts-Übergänge ---- */
+/* ---- View transitions ---- */
 .view-fwd { animation: viewInRight var(--dur) var(--ease) backwards; }
 .view-back { animation: viewInLeft var(--dur) var(--ease) backwards; }
 @keyframes viewInRight { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes viewInLeft { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: translateX(0); } }
 
-/* ---- Kopf ---- */
+/* ---- Header ---- */
 .head {
   display: flex;
   align-items: center;
@@ -71,7 +71,7 @@ select:focus-visible { outline: none; box-shadow: var(--focus); }
 .iconbtn:hover { background: var(--surface-hover); }
 .iconbtn.active { color: var(--brand-1); border-color: var(--brand-1); }
 
-/* ---- Zeitraum-Tabs ---- */
+/* ---- Period tabs ---- */
 .tabs {
   display: flex;
   gap: var(--sp-1);
@@ -99,7 +99,7 @@ select:focus-visible { outline: none; box-shadow: var(--focus); }
   box-shadow: var(--shadow-1);
 }
 
-/* ---- Statistik-Kacheln ---- */
+/* ---- Stat cards ---- */
 .summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -155,7 +155,7 @@ select:focus-visible { outline: none; box-shadow: var(--focus); }
 .wrapped-cta:hover { filter: brightness(1.07); }
 .wrapped-cta:active { transform: scale(0.99); }
 
-/* ---- Sektionen ---- */
+/* ---- Sections ---- */
 section { margin-bottom: var(--sp-4); }
 .section-title {
   font-size: var(--fs-cap);
@@ -165,7 +165,7 @@ section { margin-bottom: var(--sp-4); }
   margin: 0 2px var(--sp-2);
 }
 
-/* ---- Kategorie-Balken ---- */
+/* ---- Category bar ---- */
 .catbar {
   display: flex;
   height: 14px;
@@ -179,7 +179,7 @@ section { margin-bottom: var(--sp-4); }
 .catlegitem { font-size: var(--fs-cap); color: var(--text-dim); display: flex; align-items: center; gap: 5px; }
 .catdot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
-/* ---- Listen ---- */
+/* ---- Lists ---- */
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
 .row {
   display: flex;
@@ -206,7 +206,7 @@ section { margin-bottom: var(--sp-4); }
 .time { font-size: var(--fs-sm); font-weight: 600; }
 .visits { font-size: 10px; color: var(--text-dim); }
 
-/* Listeneinträge sanft einblenden (gedeckelte Staffelung) */
+/* Gently fade in list items (capped stagger) */
 .list .row, .kwlist .kwitem { animation: itemIn var(--dur) var(--ease) backwards; }
 @keyframes itemIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .list .row:nth-child(1), .kwlist .kwitem:nth-child(1) { animation-delay: 0.03s; }
@@ -219,7 +219,7 @@ section { margin-bottom: var(--sp-4); }
 .list .row:nth-child(8), .kwlist .kwitem:nth-child(8) { animation-delay: 0.24s; }
 .list .row:nth-child(n+9), .kwlist .kwitem:nth-child(n+9) { animation-delay: 0.27s; }
 
-/* ---- Navigations-Zeilen ---- */
+/* ---- Navigation rows ---- */
 .navbtns { display: flex; flex-direction: column; gap: var(--sp-2); }
 .navrow {
   width: 100%;
@@ -275,7 +275,7 @@ section { margin-bottom: var(--sp-4); }
 .confirm-yes { background: var(--danger); color: #fff; }
 .confirm-no { background: var(--surface-2); color: var(--text); }
 
-/* ---- Unterseiten ---- */
+/* ---- Subpages ---- */
 .subhead {
   position: sticky;
   top: 0;
@@ -302,11 +302,11 @@ section { margin-bottom: var(--sp-4); }
 .backbtn:hover { background: var(--surface-hover); }
 .subtitle { font-size: var(--fs-md); font-weight: 700; }
 
-/* Unterseiten: FESTE Pixel-Höhe (wie ein normales Popup-Fenster). Kopf +
-   Zurück-Pfeil sitzen fix oben (flex:none), und NUR die Liste scrollt.
-   min-height:0 ist entscheidend, damit das Flex-Kind innen scrollt statt
-   die Seite zu strecken. Feste Höhe statt %/max-height, weil Safari das
-   Popover sonst dynamisch wachsen lässt und der Kopf wegscrollt. */
+/* Subpages: FIXED pixel height (like a normal popup window). Header +
+   back arrow stay fixed at the top (flex:none), and ONLY the list scrolls.
+   min-height:0 is essential so the flex child scrolls inside instead of
+   stretching the page. Fixed height instead of %/max-height, because Safari
+   otherwise grows the popover dynamically and the header scrolls away. */
 .subview {
   display: flex;
   flex-direction: column;
@@ -317,7 +317,7 @@ section { margin-bottom: var(--sp-4); }
 .subview .scrolllist {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 504px; /* Fallback, falls die Flex-Höhe nicht greift */
+  max-height: 504px; /* fallback in case the flex height doesn't take effect */
   overflow-y: auto;
 }
 
@@ -336,7 +336,7 @@ section { margin-bottom: var(--sp-4); }
 .kwterm { font-size: var(--fs-body); }
 .kwcount { font-size: var(--fs-cap); color: var(--text-dim); }
 
-/* ---- Einstellungen ---- */
+/* ---- Settings ---- */
 .hintline { font-size: var(--fs-cap); color: var(--text-dim); margin: 0 2px var(--sp-2); line-height: 1.4; }
 .addrow { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
 .textin {
@@ -403,7 +403,7 @@ section { margin-bottom: var(--sp-4); }
 .langbtn:hover { background: var(--surface-hover); }
 .langbtn.on { background: var(--brand-grad); border-color: transparent; font-weight: 700; }
 
-/* ---- Leerzustand ---- */
+/* ---- Empty state ---- */
 .empty {
   text-align: center;
   color: var(--text-dim);

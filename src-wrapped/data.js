@@ -1,5 +1,5 @@
-// data.js — baut alle Kennzahlen für die Wrapped-Story eines Zeitraums.
-// Liest lokal aus IndexedDB; vergleicht mit der Vorperiode für Trends.
+// data.js — builds all the metrics for the Wrapped story of a period.
+// Reads locally from IndexedDB; compares with the previous period for trends.
 
 import {
   getRange, getKeywordsRange, getEventsBetween, todayStr,
@@ -67,7 +67,7 @@ export async function buildWrapped(periodKey) {
   const totalMs = domains.reduce((s, d) => s + d.timeMs, 0);
   const totalVisits = domains.reduce((s, d) => s + d.visits, 0);
 
-  // Kategorien nach Zeit
+  // Categories by time
   const byCat = new Map();
   for (const d of domains) {
     const c = categoryFor(d.domain);
@@ -78,15 +78,15 @@ export async function buildWrapped(periodKey) {
     .filter((c) => c.timeMs > 0)
     .sort((a, b) => b.timeMs - a.timeMs);
 
-  // Keywords + Trend (Anstieg ggü. Vorperiode)
+  // Keywords + trend (increase vs. the previous period)
   const curK = aggregateKeywords(kRows);
   const keywords = [...curK.entries()].map(([term, count]) => ({ term, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Themen = lokal gruppierte Suchbegriffe (Wortstämme zusammengefasst).
+  // Themes = locally grouped search terms (word stems merged).
   const themes = groupTerms(keywords);
 
-  // Trends: Stamm-basierter Vergleich mit der Vorperiode.
+  // Trends: stem-based comparison with the previous period.
   const prevItems = [...aggregateKeywords(prevK).entries()].map(([term, count]) => ({ term, count }));
   const prevStem = stemCountMap(prevItems);
   const trends = themes
@@ -95,7 +95,7 @@ export async function buildWrapped(periodKey) {
     .sort((a, b) => b.delta - a.delta)
     .slice(0, 5);
 
-  // Stundenverteilung aus rohen Ereignissen
+  // Hourly distribution from raw events
   const startTs = new Date(`${start}T00:00:00`).getTime();
   const events = await getEventsBetween(startTs, Date.now());
   const hist = new Array(24).fill(0);
@@ -108,7 +108,7 @@ export async function buildWrapped(periodKey) {
   }
   const personality = classifyPersonality(hist);
 
-  // Aktivster Wochentag
+  // Busiest weekday
   let busiestWeekday = null;
   const wdTotal = wd.reduce((s, n) => s + n, 0);
   if (wdTotal) {
@@ -117,13 +117,13 @@ export async function buildWrapped(periodKey) {
     busiestWeekday = { index: bw, count: wd[bw], share: wd[bw] / wdTotal };
   }
 
-  // Lockere Zeit-Vergleiche (für eine Fun-Folie)
+  // Casual time comparisons (for a fun slide)
   const funFacts = {
     episodes: Math.round(totalMs / (45 * 60000)),
     movies: +(totalMs / (2 * 3600000)).toFixed(1),
   };
 
-  // Aktivster Tag
+  // Busiest day
   const byDay = new Map();
   for (const r of rows) byDay.set(r.date, (byDay.get(r.date) || 0) + r.timeMs);
   let busiestDay = null;

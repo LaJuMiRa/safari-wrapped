@@ -4,7 +4,7 @@ import { makeShareImage } from './share.js';
 import { launchConfetti } from './confetti.js';
 import { makeT, getLang } from '../src-popup/i18n.js';
 
-/* ---------- Helfer ---------- */
+/* ---------- Helpers ---------- */
 
 function fmtTime(ms) {
   const m = Math.round(ms / 60000);
@@ -44,9 +44,9 @@ function Slide({ children }) {
   return <div className="slide-inner">{children}</div>;
 }
 
-/* ---------- Animations-Bausteine ---------- */
+/* ---------- Animation building blocks ---------- */
 
-// Zählt eine Zahl beim Erscheinen von 0 hoch (ease-out).
+// Counts a number up from 0 when it appears (ease-out).
 function useCountUp(target, duration = 1000) {
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -70,7 +70,7 @@ function Counter({ value, decimals = 0 }) {
   return <>{shown}</>;
 }
 
-// Balken, der nach dem Mounten von 0 auf seine Zielbreite wächst.
+// A bar that grows from 0 to its target width after mounting.
 function GrowBar({ pct, delay = 0 }) {
   const [w, setW] = useState(0);
   useEffect(() => {
@@ -117,7 +117,7 @@ function KeywordCloud({ items }) {
   );
 }
 
-/* ---------- Folien ---------- */
+/* ---------- Slides ---------- */
 
 function buildSlides(d, t) {
   const slides = [];
@@ -274,7 +274,7 @@ function buildSlides(d, t) {
   return slides;
 }
 
-/* ---------- Hauptkomponente ---------- */
+/* ---------- Main component ---------- */
 
 export default function Wrapped() {
   const initialPeriod = useMemo(() => {
@@ -304,7 +304,7 @@ export default function Wrapped() {
 
   useEffect(() => { reload(period); }, [period, reload]);
 
-  // Folien aus Daten + Sprache ableiten (neu bei Sprachwechsel).
+  // Derive slides from data + language (rebuilt on language change).
   const slides = useMemo(() => (data ? buildSlides(data, t) : []), [data, lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const count = slides.length;
 

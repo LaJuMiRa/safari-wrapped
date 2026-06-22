@@ -1,5 +1,5 @@
-// confetti.js — kleines, eigenständiges Konfetti (kein externes Paket).
-// Zeichnet fallende Schnipsel auf ein temporäres Canvas und räumt selbst auf.
+// confetti.js — small, self-contained confetti (no external package).
+// Draws falling pieces on a temporary canvas and cleans up after itself.
 
 export function launchConfetti(durationMs = 2600) {
   const canvas = document.createElement('canvas');

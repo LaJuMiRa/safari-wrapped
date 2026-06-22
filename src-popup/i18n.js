@@ -1,20 +1,20 @@
-// i18n.js — zentrale Übersetzungen (Deutsch / Englisch) für Popup + Wrapped.
-// Sprache wird in chrome.storage.local unter 'lang' gespeichert ('de' | 'en').
+// i18n.js — central translations (German / English) for popup + wrapped.
+// The language is stored in chrome.storage.local under 'lang' ('de' | 'en').
 
 const STRINGS = {
   de: {
-    // Popup – Kopf / allgemein
+    // Popup – header / general
     'settings.title': 'Einstellungen',
     'common.loading': 'Lade…',
     'common.yes': 'Ja',
     'common.no': 'Nein',
     'common.nodata': 'Keine Daten.',
-    // Zeiträume
+    // Periods
     'per.today': 'Heute',
     'per.week': 'Woche',
     'per.month': 'Monat',
     'per.year': 'Jahr',
-    // Zusammenfassung
+    // Summary
     'sum.active': 'aktiv',
     'sum.visits': 'Aufrufe',
     'sum.domains': 'Domains',
@@ -28,14 +28,14 @@ const STRINGS = {
     'clear.confirm': 'Wirklich löschen?',
     'clear.btn': 'Daten löschen',
     'hint.local': '100 % lokal',
-    // Unterseiten
+    // Subpages
     'page.allsites': 'Alle Websites',
     'page.keywords': 'Suchbegriffe',
     'page.settings': 'Einstellungen',
     'allsites.count': '{label} · {n} Domains',
     'keywords.count': '{label} · {n} Begriffe',
     'keywords.empty': 'Noch keine Suchbegriffe erfasst. Such mal über Google & Co. — sie erscheinen hier.',
-    // Einstellungen
+    // Settings
     'set.exclude.title': 'Ausschlussliste',
     'set.exclude.hint': 'Diese Domains werden nie getrackt (z. B. Banking).',
     'set.exclude.placeholder': 'z. B. meinebank.de',
@@ -47,7 +47,7 @@ const STRINGS = {
     'set.retention.0': 'Unbegrenzt',
     'set.lang.title': 'Sprache',
     'set.footer': 'Alle Daten bleiben auf deinem Gerät.',
-    // Wochentage / Persönlichkeit / Kategorien
+    // Weekdays / personality / categories
     'wd.0': 'Sonntag', 'wd.1': 'Montag', 'wd.2': 'Dienstag', 'wd.3': 'Mittwoch',
     'wd.4': 'Donnerstag', 'wd.5': 'Freitag', 'wd.6': 'Samstag',
     'pers.frueh': 'Frühaufsteher', 'pers.tag': 'Tagmensch',
@@ -56,7 +56,7 @@ const STRINGS = {
     'cat.news': 'News', 'cat.shopping': 'Shopping', 'cat.productivity': 'Produktivität',
     'cat.reference': 'Wissen', 'cat.finance': 'Finanzen', 'cat.email': 'E-Mail',
     'cat.music': 'Musik', 'cat.search': 'Suche', 'cat.other': 'Sonstiges',
-    // Wrapped-Story
+    // Wrapped story
     'w.loading': 'Dein Wrapped wird erstellt…',
     'w.empty.title': 'Noch zu wenig Daten',
     'w.empty.sub': 'Für ein {period}-Wrapped fehlt noch Verlauf. Surf ein paar Tage — dann wird’s bunt.',

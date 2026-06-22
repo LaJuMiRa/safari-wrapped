@@ -6,7 +6,7 @@ import { CATEGORIES, categoryFor } from './categories.js';
 import { makeT, getLang, LANGS } from './i18n.js';
 import Icon from './Icon.jsx';
 
-/* ---------- Helfer ------------------------------------------------------- */
+/* ---------- Helpers ------------------------------------------------------- */
 
 function fmtTime(ms) {
   const totalMin = Math.round(ms / 60000);
@@ -40,7 +40,7 @@ async function flushBackground() {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       await chrome.runtime.sendMessage({ type: 'flush' });
     }
-  } catch { /* Hintergrund evtl. nicht erreichbar */ }
+  } catch { /* background may be unreachable */ }
 }
 
 const hasChrome = typeof chrome !== 'undefined' && chrome.storage;
@@ -68,8 +68,8 @@ function openWrapped(period) {
   } catch { /* noop */ }
 }
 
-// Detail-Listen (Alle Websites / Suchbegriffe) als Vollbild-Seite im neuen Tab –
-// umgeht zuverlässig die Höhenbeschränkung des Popups.
+// Detail lists (All sites / Search terms) as a full-screen page in a new tab —
+// reliably works around the height limit of the popup.
 function openDetails(period, mode) {
   try {
     if (typeof chrome !== 'undefined' && chrome.tabs && chrome.runtime) {
@@ -78,7 +78,7 @@ function openDetails(period, mode) {
   } catch { /* noop */ }
 }
 
-/* ---------- Wiederverwendbare Zeile ------------------------------------- */
+/* ---------- Reusable row ------------------------------------- */
 
 function DomainRow({ r, i, maxMs }) {
   return (
@@ -103,7 +103,7 @@ function DomainRow({ r, i, maxMs }) {
   );
 }
 
-/* ---------- Hauptkomponente --------------------------------------------- */
+/* ---------- Main component --------------------------------------------- */
 
 export default function App() {
   const [lang, setLang] = useState('de');
@@ -115,7 +115,7 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [dir, setDir] = useState('fwd'); // Richtung des letzten Ansichtswechsels
+  const [dir, setDir] = useState('fwd'); // direction of the last view change
 
   const goTo = (v) => { setDir('fwd'); setView(v); };
   const goBack = () => { setDir('back'); setView('main'); };
@@ -325,13 +325,13 @@ export default function App() {
   );
 }
 
-/* ---------- Unterseite: Alle Websites ----------------------------------- */
+/* ---------- Subpage: All sites ----------------------------------- */
 
 function AllSites({ t, dir, domains, maxMs, label, onBack }) {
   return (
     <div className={`wrap subview view-${dir}`}>
       <header className="subhead">
-        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück"><Icon name="chevronLeft" size={20} /></button>
+        <button className="backbtn" onClick={onBack} title="Back" aria-label="Back"><Icon name="chevronLeft" size={20} /></button>
         <span className="subtitle">{t('page.allsites')}</span>
       </header>
       <div className="hintline" style={{ textAlign: 'center' }}>{t('allsites.count', { label, n: domains.length })}</div>
@@ -348,14 +348,14 @@ function AllSites({ t, dir, domains, maxMs, label, onBack }) {
   );
 }
 
-/* ---------- Unterseite: Suchbegriffe (alphabetisch) --------------------- */
+/* ---------- Subpage: Search terms (alphabetical) --------------------- */
 
 function Keywords({ t, lang, dir, keywords, label, onBack }) {
   const sorted = [...keywords].sort((a, b) => a.term.localeCompare(b.term, lang));
   return (
     <div className={`wrap subview view-${dir}`}>
       <header className="subhead">
-        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück"><Icon name="chevronLeft" size={20} /></button>
+        <button className="backbtn" onClick={onBack} title="Back" aria-label="Back"><Icon name="chevronLeft" size={20} /></button>
         <span className="subtitle">{t('page.keywords')}</span>
       </header>
       <div className="hintline" style={{ textAlign: 'center' }}>{t('keywords.count', { label, n: sorted.length })}</div>
@@ -375,7 +375,7 @@ function Keywords({ t, lang, dir, keywords, label, onBack }) {
   );
 }
 
-/* ---------- Einstellungen ------------------------------------------------ */
+/* ---------- Settings ------------------------------------------------ */
 
 function Settings({ t, lang, dir, onLang, onBack }) {
   const [exclude, setExclude] = useState([]);
@@ -410,7 +410,7 @@ function Settings({ t, lang, dir, onLang, onBack }) {
   return (
     <div className={`wrap view-${dir}`}>
       <header className="subhead">
-        <button className="backbtn" onClick={onBack} title="Zurück" aria-label="Zurück"><Icon name="chevronLeft" size={20} /></button>
+        <button className="backbtn" onClick={onBack} title="Back" aria-label="Back"><Icon name="chevronLeft" size={20} /></button>
         <span className="subtitle">{t('page.settings')}</span>
       </header>
 

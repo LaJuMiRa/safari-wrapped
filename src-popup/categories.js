@@ -1,24 +1,24 @@
-// categories.js — grobe Domain→Kategorie-Zuordnung (rein lokal, kein Lookup).
-// Wird nur zur Anzeige im Popup genutzt. Erweiterbar: einfach Regeln ergänzen.
+// categories.js — coarse domain → category mapping (fully local, no lookup).
+// Used only for display in the popup. Extensible: just add rules.
+// Muted, warm-toned category colors (to match the muted palette).
 
-// Muted, warm abgestimmte Kategorie-Farben (zur dezenten Palette passend).
 export const CATEGORIES = {
-  dev:          { label: 'Entwicklung',   color: '#6f93b0' },
-  ai:           { label: 'KI',            color: '#9d8bb3' },
-  social:       { label: 'Social',        color: '#c2849c' },
-  video:        { label: 'Video',         color: '#c47a6e' },
-  news:         { label: 'News',          color: '#c9a36b' },
-  shopping:     { label: 'Shopping',      color: '#7faa8e' },
-  productivity: { label: 'Produktivität', color: '#9a8fb5' },
-  reference:    { label: 'Wissen',        color: '#6faaa0' },
-  finance:      { label: 'Finanzen',      color: '#86a982' },
-  email:        { label: 'E-Mail',        color: '#7ba0b3' },
-  music:        { label: 'Musik',         color: '#a98ab0' },
-  search:       { label: 'Suche',         color: '#8d8a86' },
-  other:        { label: 'Sonstiges',     color: '#8a8279' },
+  dev:          { label: 'Development',  color: '#6f93b0' },
+  ai:           { label: 'AI',           color: '#9d8bb3' },
+  social:       { label: 'Social',       color: '#c2849c' },
+  video:        { label: 'Video',        color: '#c47a6e' },
+  news:         { label: 'News',         color: '#c9a36b' },
+  shopping:     { label: 'Shopping',     color: '#7faa8e' },
+  productivity: { label: 'Productivity', color: '#9a8fb5' },
+  reference:    { label: 'Knowledge',    color: '#6faaa0' },
+  finance:      { label: 'Finance',      color: '#86a982' },
+  email:        { label: 'Email',        color: '#7ba0b3' },
+  music:        { label: 'Music',        color: '#a98ab0' },
+  search:       { label: 'Search',       color: '#8d8a86' },
+  other:        { label: 'Other',        color: '#8a8279' },
 };
 
-// Reihenfolge zählt: erste passende Regel gewinnt.
+// Order matters: the first matching rule wins.
 const RULES = [
   [/(github|gitlab|stackoverflow|stackexchange|npmjs\.com|developer\.|mdn|bitbucket|codepen|jsfiddle|vercel|netlify|localhost|codesandbox)/, 'dev'],
   [/(openai|chatgpt|claude\.ai|anthropic|perplexity|gemini|huggingface|midjourney|copilot)/, 'ai'],

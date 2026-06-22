@@ -1,22 +1,22 @@
-// background.js — Service Worker (eigenständig, KEINE Imports).
+// background.js — service worker (self-contained, NO imports).
 //
-// Safari lädt Module-Service-Worker (type: "module" + import) nicht zuverlässig,
-// deshalb ist hier alles in einer Datei gebündelt: IndexedDB-Layer,
-// Verweildauer-Uhr und Event-Verdrahtung.
+// Safari does not reliably load module service workers (type: "module" + import),
+// so everything is bundled into this one file: the IndexedDB layer, the
+// dwell-time clock, and the event wiring.
 //
-// Verantwortlich für:
-//  - Erkennen, welche Domain im aktiven Tab des fokussierten Fensters liegt
-//  - Zählen von Besuchen (pro Top-Level-Navigation)
-//  - Steuern der Verweildauer-Uhr anhand von Tab/Fokus/Idle/Pause/Ausschluss
-//  - Periodische Checkpoints und Pruning alter Roh-Ereignisse
+// Responsible for:
+//  - detecting which domain is in the active tab of the focused window
+//  - counting visits (per top-level navigation)
+//  - driving the dwell-time clock based on tab/focus/idle/pause/exclusion
+//  - periodic checkpoints and pruning of old raw events
 //
-// Datenschutz: nur Domains (keine vollständigen URLs); private Fenster und
-// ausgeschlossene Domains werden ignoriert.
+// Privacy: domains only (no full URLs); private windows and excluded domains
+// are ignored.
 
 'use strict';
 
 /* =========================================================================
- *  IndexedDB-Layer  (identische Logik wie db.js, hier inline)
+ *  IndexedDB layer  (same logic as db.js, inlined here)
  * ========================================================================= */
 const DB_NAME = 'browsing-wrapped';
 const DB_VERSION = 2;
@@ -112,12 +112,12 @@ function todayStr(d) {
 }
 
 /* =========================================================================
- *  Verweildauer-Uhr
+ *  Dwell-time clock
  * ========================================================================= */
-let timing = null; // { domain, since } oder null
+let timing = null; // { domain, since } or null
 
-// Das laufende Segment in storage.local sichern, damit es das Entladen der
-// (nicht-persistenten) Hintergrundseite übersteht.
+// Persist the running segment to storage.local so it survives the unloading
+// of the (non-persistent) background page.
 async function persistSeg() {
   try {
     if (timing) await chrome.storage.local.set({ activeSeg: timing });
@@ -131,7 +131,7 @@ async function accrue() {
   const ms = now - timing.since;
   const domain = timing.domain;
   timing.since = now;
-  if (ms > 0 && ms < 12 * 60 * 60 * 1000) { // Sanity-Cap: nie > 12h pro Gutschrift
+  if (ms > 0 && ms < 12 * 60 * 60 * 1000) { // sanity cap: never > 12h per credit
     await bumpDaily(todayStr(), domain, { ms });
   }
   await persistSeg();
@@ -144,7 +144,7 @@ async function setActiveDomain(domain) {
 }
 
 /* =========================================================================
- *  Zustand & Helfer
+ *  State & helpers
  * ========================================================================= */
 const NONE = chrome.windows.WINDOW_ID_NONE;
 
@@ -154,7 +154,7 @@ const state = {
   focused: true,
   activeTabId: null,
   exclude: [],
-  retentionDays: 90, // 0 = unbegrenzt (rohe Ereignisse nie löschen)
+  retentionDays: 90, // 0 = unlimited (never delete raw events)
 };
 
 const tabDomains = new Map(); // tabId -> domain
@@ -174,9 +174,9 @@ function isExcluded(domain) {
   return state.exclude.some((x) => domain === x || domain.endsWith('.' + x));
 }
 
-/* ---- Suchanfragen → Keywords ------------------------------------------- */
+/* ---- Search queries → keywords ----------------------------------------- */
 
-// Liefert den Query-Parameter-Namen, wenn die Domain eine Suchmaschine ist.
+// Returns the query-parameter name if the domain is a search engine.
 function searchParamFor(domain) {
   if (!domain) return null;
   if (/(^|\.)google\./.test(domain)) return 'q';
@@ -192,9 +192,9 @@ function searchParamFor(domain) {
   return null;
 }
 
-// Häufige Füllwörter (DE + EN), die als Thema nichts aussagen.
+// Common stop-words (DE + EN) that carry no thematic meaning.
 const STOPWORDS = new Set([
-  // Deutsch
+  // German
   'der', 'die', 'das', 'und', 'oder', 'aber', 'wie', 'was', 'wer', 'wo', 'wann',
   'warum', 'wieso', 'ein', 'eine', 'einen', 'einem', 'einer', 'eines', 'ist',
   'sind', 'war', 'waren', 'sein', 'hat', 'haben', 'wird', 'werden', 'kann',
@@ -202,7 +202,7 @@ const STOPWORDS = new Set([
   'über', 'unter', 'vor', 'nicht', 'kein', 'keine', 'auch', 'noch', 'nur',
   'sehr', 'mehr', 'man', 'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'im',
   'in', 'an', 'am', 'als', 'so', 'zu', 'den', 'dem', 'des', 'doch', 'mal',
-  // Englisch
+  // English
   'the', 'a', 'an', 'and', 'or', 'but', 'how', 'what', 'who', 'where', 'when',
   'why', 'is', 'are', 'was', 'were', 'be', 'has', 'have', 'will', 'can', 'with',
   'without', 'for', 'from', 'to', 'of', 'on', 'in', 'at', 'by', 'not', 'no',
@@ -210,7 +210,7 @@ const STOPWORDS = new Set([
   'do', 'does', 'this', 'that', 'best', 'vs',
 ]);
 
-// Zerlegt eine Such-URL in saubere Einzel-Keywords (dedupliziert pro Anfrage).
+// Splits a search URL into clean individual keywords (deduplicated per query).
 function extractKeywords(url, param) {
   let q = '';
   try {
@@ -224,7 +224,7 @@ function extractKeywords(url, param) {
     const w = raw.trim();
     if (w.length < 2) continue;
     if (STOPWORDS.has(w)) continue;
-    if (/^\d{1,3}$/.test(w)) continue; // sehr kurze reine Zahlen weglassen
+    if (/^\d{1,3}$/.test(w)) continue; // drop very short pure numbers
     seen.add(w);
   }
   return [...seen];
@@ -242,7 +242,7 @@ function sync() {
 }
 
 /* =========================================================================
- *  Einstellungen (klein -> storage.local, mit onChanged)
+ *  Settings (small -> storage.local, with onChanged)
  * ========================================================================= */
 async function loadSettings() {
   const s = await chrome.storage.local.get(['paused', 'exclude', 'retentionDays']);
@@ -273,15 +273,15 @@ async function initActiveTab() {
       const d = domainFromUrl(tab.url || '');
       if (d) tabDomains.set(tab.id, d);
     }
-  } catch { /* beim ersten Start evtl. noch keine Rechte */ }
+  } catch { /* on first start there may be no permissions yet */ }
 }
 
 async function boot() {
   await loadSettings();
 
-  // Gesichertes Segment vom letzten Lauf verrechnen, falls die Hintergrundseite
-  // zwischendurch entladen wurde. Die Gutschrift wird auf 5 min gedeckelt –
-  // war der Nutzer länger weg, hätte Idle das Segment ohnehin beendet.
+  // Credit the persisted segment from the previous run in case the background
+  // page was unloaded in the meantime. The credit is capped at 5 min — if the
+  // user was away longer, idle would have ended the segment anyway.
   try {
     const saved = await chrome.storage.local.get('activeSeg');
     const seg = saved.activeSeg;
@@ -297,19 +297,19 @@ async function boot() {
   await initActiveTab();
   chrome.alarms.create('checkpoint', { periodInMinutes: 1 });
   chrome.alarms.create('prune', { periodInMinutes: 360 });
-  // 5 min Idle-Schwelle: kurze Lesepausen ohne Mausbewegung stoppen die Uhr nicht.
+  // 5 min idle threshold: short reading pauses without mouse movement don't stop the clock.
   try { chrome.idle.setDetectionInterval(300); } catch { /* noop */ }
   sync();
 }
 
-// Vor dem Entladen der Hintergrundseite die laufende Zeit sichern.
-// (onSuspend gibt es nicht überall – defensiv prüfen, sonst bricht der Worker.)
+// Persist the running time before the background page unloads.
+// (onSuspend doesn't exist everywhere — guard defensively, or the worker breaks.)
 if (chrome.runtime.onSuspend && chrome.runtime.onSuspend.addListener) {
   chrome.runtime.onSuspend.addListener(() => { accrue(); });
 }
 
-// Flush-Anfrage vom Popup: laufendes Segment sofort wegschreiben, damit die
-// Anzeige die aktuelle Zeit enthält.
+// Flush request from the popup: write the running segment immediately so the
+// display includes the current time.
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.type === 'flush') {
     accrue().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
@@ -320,11 +320,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 chrome.runtime.onStartup.addListener(boot);
 chrome.runtime.onInstalled.addListener(boot);
-// Auch beim normalen Aufwachen des Workers initialisieren:
+// Also initialize when the worker simply wakes up:
 boot();
 
 /* =========================================================================
- *  Tab-Wechsel
+ *  Tab switching
  * ========================================================================= */
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   state.activeTabId = tabId;
@@ -347,10 +347,10 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 /* =========================================================================
- *  Navigation: Besuche zählen + Domain des Tabs aktualisieren
+ *  Navigation: count visits + update the tab's domain
  * ========================================================================= */
 chrome.webNavigation.onCommitted.addListener(async (details) => {
-  if (details.frameId !== 0) return; // nur Haupt-Frame
+  if (details.frameId !== 0) return; // main frame only
   const domain = domainFromUrl(details.url);
   if (domain) tabDomains.set(details.tabId, domain);
   else tabDomains.delete(details.tabId);
@@ -359,7 +359,7 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
     await bumpDaily(todayStr(), domain, { visits: 1 });
     await addEvent({ ts: Date.now(), domain, type: 'visit', durationMs: 0 });
 
-    // Suchanfrage? Dann Keywords mitzählen.
+    // A search query? Then count its keywords too.
     const param = searchParamFor(domain);
     if (param) {
       const words = extractKeywords(details.url, param);
@@ -370,7 +370,7 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
 });
 
 /* =========================================================================
- *  Fenster-Fokus
+ *  Window focus
  * ========================================================================= */
 chrome.windows.onFocusChanged.addListener(async (winId) => {
   state.focused = winId !== NONE;
@@ -391,12 +391,12 @@ chrome.windows.onFocusChanged.addListener(async (winId) => {
  *  Idle
  * ========================================================================= */
 chrome.idle.onStateChanged.addListener((st) => {
-  state.idle = st !== 'active'; // 'idle' | 'locked' -> pausieren
+  state.idle = st !== 'active'; // 'idle' | 'locked' -> pause
   sync();
 });
 
 /* =========================================================================
- *  Alarme
+ *  Alarms
  * ========================================================================= */
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'checkpoint') {
