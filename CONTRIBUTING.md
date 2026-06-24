@@ -28,9 +28,11 @@ To test, package the extension into a Safari app and load it as described in the
 
 ## Pull requests
 
-1. Fork and branch (`feature/...` or `fix/...`).
-2. Make your change with a short description in the PR (screenshots help for UI changes).
-3. For notable changes, add an entry to `CHANGELOG.md`.
+1. Fork the repository and create a branch (`feature/...` or `fix/...`).
+2. Make your change. For non-trivial changes, add a short explanation in the PR
+   description (what, why, how to test).
+3. For user-visible changes, add an entry to [`CHANGELOG.md`](CHANGELOG.md) under
+   an `[Unreleased]` section.
 
 By contributing, you agree that your contributions are licensed under the
 project's [GNU GPL v3](LICENSE).
