@@ -10,8 +10,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: '../extension/popup',
-    // Don't empty: hashed asset names avoid collisions, and emptying sometimes
-    // fails due to file locks. Old assets are harmless.
-    emptyOutDir: false,
+    // Remove old hashed bundles on every build so only the current one ships.
+    emptyOutDir: true,
   },
 });

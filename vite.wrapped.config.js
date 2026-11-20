@@ -8,6 +8,6 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: '../extension/wrapped',
-    emptyOutDir: false,
+    emptyOutDir: true,
   },
 });
