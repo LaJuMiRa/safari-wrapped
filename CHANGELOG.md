@@ -21,6 +21,9 @@ to [Semantic Versioning](https://semver.org/).
   store and keyword.
 - Popup and Wrapped story load their data in parallel.
 - Builds now remove old bundles; the unused `extension/tracker.js` was removed.
+- `release.sh` builds the app from the `VERSION` file and packages
+  `dist/Browsing-Wrapped-<version>.zip` with its SHA-256. Minimum macOS is now
+  26.0 (was 26.5).
 
 ## [1.0.0] – 2026-06-19
 
