@@ -57,10 +57,12 @@ export async function buildWrapped(periodKey) {
   const prevEnd = todayStr(shiftDate(new Date(), -period.days));
   const prevStart = todayStr(shiftDate(new Date(), -(period.days * 2 - 1)));
 
-  const [rows, kRows, prevK] = await Promise.all([
+  const startTs = new Date(`${start}T00:00:00`).getTime();
+  const [rows, kRows, prevK, events] = await Promise.all([
     getRange(start, end),
     getKeywordsRange(start, end),
     getKeywordsRange(prevStart, prevEnd),
+    getEventsBetween(startTs, Date.now()),
   ]);
 
   const domains = aggregateDomains(rows);
@@ -96,8 +98,6 @@ export async function buildWrapped(periodKey) {
     .slice(0, 5);
 
   // Hourly distribution from raw events
-  const startTs = new Date(`${start}T00:00:00`).getTime();
-  const events = await getEventsBetween(startTs, Date.now());
   const hist = new Array(24).fill(0);
   const wd = new Array(7).fill(0);
   for (const e of events) {

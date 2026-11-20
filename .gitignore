@@ -54,3 +54,5 @@ xcuserdata/
 
 # Generierte Safari-App-Hülle #
 /Browsing Wrapped/
+# Release output #
+dist/

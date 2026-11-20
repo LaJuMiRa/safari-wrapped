@@ -133,7 +133,11 @@ export default function App() {
       const start = dateNDaysAgo(days);
       const end = todayStr();
 
-      const rows = await getRange(start, end);
+      const [rows, kRows, settings] = await Promise.all([
+        getRange(start, end),
+        getKeywordsRange(start, end),
+        getSettings(),
+      ]);
       const byDomain = new Map();
       for (const r of rows) {
         const cur = byDomain.get(r.domain) || { domain: r.domain, timeMs: 0, visits: 0 };
@@ -155,13 +159,12 @@ export default function App() {
         .sort((a, b) => b.timeMs - a.timeMs);
       setCats(catList);
 
-      const kRows = await getKeywordsRange(start, end);
       const byTerm = new Map();
       for (const k of kRows) byTerm.set(k.term, (byTerm.get(k.term) || 0) + k.count);
       const kwList = [...byTerm.entries()].map(([term, count]) => ({ term, count }));
       setKeywords(kwList);
 
-      setPaused((await getSettings()).paused);
+      setPaused(settings.paused);
     } finally {
       setLoading(false);
     }

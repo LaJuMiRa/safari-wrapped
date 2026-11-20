@@ -47,24 +47,29 @@ author. No account, no server, no sync, no telemetry.
 
 ### Requirements
 
-macOS with Safari and Homebrew to install.
+macOS 26 (Tahoe) or later with Safari, and Homebrew to install.
 
 ### Homebrew
 
 ```bash
-brew tap LaJuMiRa/safari-wrapped https://github.com/LaJuMiRa/safari-wrapped
-brew install --cask browsing-wrapped
+brew install --cask LaJuMiRa/tap/browsing-wrapped
 ```
 
-The first command registers this repository as a Homebrew tap (one-time, per machine);
-the second downloads the latest release and installs **Browsing Wrapped.app** into
-`/Applications`. For later updates just run `brew upgrade --cask browsing-wrapped`.
+This downloads the latest release from the [LaJuMiRa/homebrew-tap](https://github.com/LaJuMiRa/homebrew-tap)
+tap and installs **Browsing Wrapped.app** into `/Applications`. Using the full name
+`LaJuMiRa/tap/browsing-wrapped` also tells Homebrew to trust this one cask, so no
+separate `brew trust` step is needed. For later updates run
+`brew upgrade --cask browsing-wrapped`.
 
-> **First launch:** the app is unsigned, so macOS blocks it once. Open
-> **System Settings → Privacy & Security**, scroll down and click **“Open Anyway”**
-> (on older macOS: right-click the app → **Open**). Then enable the extension under
-> **Safari → Settings → Extensions → Browsing Wrapped** and allow website access on
-> first use.
+> **Moving from the old tap:** if you installed with
+> `brew tap LaJuMiRa/safari-wrapped …`, switch once:
+> `brew uninstall --cask browsing-wrapped && brew untap LaJuMiRa/safari-wrapped`,
+> then run the install command above.
+
+> **First launch:** the app is not notarized by Apple, so macOS blocks it once. Open
+> **System Settings → Privacy & Security**, scroll down and click **“Open Anyway”**.
+> Then enable the extension under **Safari → Settings → Extensions → Browsing Wrapped**
+> and allow website access on first use.
 
 ## How it works
 

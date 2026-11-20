@@ -71,24 +71,30 @@ async function bumpDaily(date, domain, delta) {
   return txDone(tx);
 }
 
-async function addEvent(ev) {
+// Records one top-level visit in a single transaction: +1 visit in dailyStats,
+// one raw 'visit' event and +1 for each search keyword.
+async function recordVisit(date, domain, keywords) {
   const db = await openDB();
-  const tx = db.transaction('events', 'readwrite');
-  tx.objectStore('events').add(Object.assign({}, ev));
-  return txDone(tx);
-}
+  const tx = db.transaction(['dailyStats', 'events', 'keywords'], 'readwrite');
+  const now = Date.now();
 
-async function bumpKeyword(date, term, by) {
-  by = by || 1;
-  const db = await openDB();
-  const tx = db.transaction('keywords', 'readwrite');
-  const store = tx.objectStore('keywords');
-  const getReq = store.get([date, term]);
-  getReq.onsuccess = () => {
-    const cur = getReq.result || { date, term, count: 0 };
-    cur.count += by;
-    store.put(cur);
+  const daily = tx.objectStore('dailyStats');
+  const dailyReq = daily.get([date, domain]);
+  dailyReq.onsuccess = () => {
+    const cur = dailyReq.result || { date, domain, visits: 0, timeMs: 0 };
+    daily.put({ ...cur, visits: cur.visits + 1, updatedAt: now });
   };
+
+  tx.objectStore('events').add({ ts: now, domain, type: 'visit', durationMs: 0 });
+
+  const kw = tx.objectStore('keywords');
+  for (const term of keywords) {
+    const kwReq = kw.get([date, term]);
+    kwReq.onsuccess = () => {
+      const cur = kwReq.result || { date, term, count: 0 };
+      kw.put({ ...cur, count: cur.count + 1 });
+    };
+  }
   return txDone(tx);
 }
 
@@ -251,6 +257,9 @@ async function loadSettings() {
   state.retentionDays = typeof s.retentionDays === 'number' ? s.retentionDays : 90;
 }
 
+// Only re-sync when a setting that affects tracking changed. Reacting to every
+// change would include our own `activeSeg` writes (see persistSeg) and turn
+// into a feedback loop of storage and IndexedDB writes.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.paused) state.paused = !!changes.paused.newValue;
@@ -259,7 +268,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     state.retentionDays = typeof changes.retentionDays.newValue === 'number'
       ? changes.retentionDays.newValue : 90;
   }
-  sync();
+  if (changes.paused || changes.exclude) sync();
 });
 
 /* =========================================================================
@@ -276,7 +285,15 @@ async function initActiveTab() {
   } catch { /* on first start there may be no permissions yet */ }
 }
 
-async function boot() {
+// boot() is triggered by the worker waking up AND by onStartup/onInstalled.
+// Run it once per worker instance, or the persisted segment is credited twice.
+let bootPromise = null;
+function boot() {
+  if (!bootPromise) bootPromise = runBoot();
+  return bootPromise;
+}
+
+async function runBoot() {
   await loadSettings();
 
   // Credit the persisted segment from the previous run in case the background
@@ -356,14 +373,13 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
   else tabDomains.delete(details.tabId);
 
   if (domain && !isExcluded(domain) && !state.paused) {
-    await bumpDaily(todayStr(), domain, { visits: 1 });
-    await addEvent({ ts: Date.now(), domain, type: 'visit', durationMs: 0 });
-
     // A search query? Then count its keywords too.
     const param = searchParamFor(domain);
-    if (param) {
-      const words = extractKeywords(details.url, param);
-      for (const w of words) await bumpKeyword(todayStr(), w);
+    const words = param ? extractKeywords(details.url, param) : [];
+    try {
+      await recordVisit(todayStr(), domain, words);
+    } catch (err) {
+      console.error('Browsing Wrapped: failed to record visit', err);
     }
   }
   if (details.tabId === state.activeTabId) sync();
